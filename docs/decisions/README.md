@@ -12,3 +12,4 @@ supersedes the old one.
 | [0005](0005-single-node-web-deployable-first.md) | Accepted | One Node/Next.js deployable before daemon or desktop extraction |
 | [0006](0006-governance-before-agent-runtime.md) | Accepted | Establish shared rules and a small development team before runtime implementation |
 | [0007](0007-public-and-internal-document-boundary.md) | Accepted | Keep public technical trust contracts separate from internal product and Cloud context |
+| [0008](0008-browser-originated-local-request-boundary.md) | Accepted | Protect the local browser surface without a custom raw HTTP server |

@@ -46,12 +46,13 @@ feature beyond the Next.js shell has been implemented.
 
 ## In progress
 
-- Task card 0001 is implemented and awaiting independent review.
+- Task card 0001 is implemented. Its browser request boundary amendment is
+  awaiting independent re-review.
 
 ## Next up
 
-1. Run the independent reviewer against the stable Task card 0001 commit.
-2. Address only concrete review findings.
+1. Re-run the independent reviewer against Task card 0001 and ADR 0008.
+2. Close Task card 0001 if the amended acceptance criteria pass.
 3. Begin provider runtime only through a later approved task.
 
 ## Blockers
@@ -75,6 +76,8 @@ feature beyond the Next.js shell has been implemented.
   runtime implementation.
 - Public technical trust contracts and internal product strategy live in
   separate repositories.
+- The local shell protects browser-originated requests; it does not add a
+  custom server for malformed raw HTTP handled before Next.js middleware.
 
 ## Session log
 
@@ -83,6 +86,9 @@ feature beyond the Next.js shell has been implemented.
 - Implemented Task card 0001 as a dependency-free loopback-only Next.js shell
   with fail-closed Host validation, required security headers, honest UI copy,
   and a runnable boundary test.
+- Independent review found raw HTTP forms normalized before Next.js
+  middleware. The owner approved the browser-originated boundary in ADR 0008
+  instead of adding a custom server that would not authorize local processes.
 - Replaced the unpublished multi-commit public history with one clean root
   commit after explicit owner approval.
 - Confirmed that removed internal pricing and ICP content is unreachable from

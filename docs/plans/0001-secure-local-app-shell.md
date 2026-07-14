@@ -1,6 +1,6 @@
 # Task card 0001: Secure local app shell
 
-Status: Approved
+Status: Approved — review amendment accepted
 
 Coordinator: Patchfleet coordinator
 
@@ -11,6 +11,8 @@ Reviewer: independent reviewer after the builder commit
 Updated: 2026-07-15
 
 Approved by owner: 2026-07-15
+
+Review amendment approved by owner: 2026-07-15
 
 ## Objective
 
@@ -46,14 +48,16 @@ Treat these as read-only contracts:
 - `docs/product.md`;
 - `docs/architecture.md`;
 - `docs/plans/v0-local-first-control-loop.md`;
-- ADRs 0001–0007.
+- ADRs 0001–0008.
 
 ## Required behavior
 
 1. `npm run dev` and `npm run start` bind explicitly to `127.0.0.1`.
-2. The request boundary accepts only `localhost` and `127.0.0.1` Host values,
-   with an optional port, and rejects missing, malformed, or other hosts.
-3. Responses set `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
+2. For browser-originated requests, the application boundary accepts only
+   `localhost` and `127.0.0.1` Host values, with an optional valid port, and
+   rejects missing, malformed, or other Host values exposed to middleware.
+3. Responses produced by the middleware boundary set
+   `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
    `Referrer-Policy: no-referrer`, and a restrictive `Permissions-Policy` for
    camera, microphone, and geolocation.
 4. The page identifies itself as a local console without fake provider,
@@ -69,7 +73,8 @@ Treat these as read-only contracts:
 - `npm run build` succeeds.
 - A production smoke run serves the page at `http://127.0.0.1:3000`.
 - The smoke response contains every required security header.
-- A request with an untrusted Host header receives a rejecting status.
+- A browser-style request with an untrusted Host header receives a rejecting
+  status.
 - The application makes no outbound network request.
 - `git diff --check` succeeds.
 
@@ -100,3 +105,7 @@ Authentication, CSRF protection, and a nonce-based Content Security Policy are
 not useful in a read-only shell with no API or sensitive projection yet. They
 must be reconsidered before the first mutating endpoint, non-loopback listener,
 or untrusted content is introduced.
+
+Raw duplicate Host headers and absolute-form request targets that Node.js or
+Next.js handles before middleware are outside this browser boundary. ADR 0008
+records why a custom HTTP server is not added for those forms.
