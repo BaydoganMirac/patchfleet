@@ -35,20 +35,23 @@ feature beyond the Next.js shell has been implemented.
 - Public versus internal documentation ownership recorded in ADR 0007.
 - Initial coordinator, builder, and independent reviewer workflow completed
   through a reviewed follow-up commit.
+- First implementation scope drafted as
+  [Task card 0001](../plans/0001-secure-local-app-shell.md).
 
 ## In progress
 
-- First implementation task card awaits owner review.
+- Task card 0001 awaits explicit owner approval. No product code has started.
 
 ## Next up
 
-1. Approve or revise the first implementation task card.
+1. Approve or revise
+   [Task card 0001](../plans/0001-secure-local-app-shell.md).
 2. Implement the secure local app shell through the builder/reviewer workflow.
 3. Begin provider runtime only through a later approved task.
 
 ## Blockers
 
-- None.
+- Owner approval of Task card 0001 is required before product code starts.
 
 ## Open questions
 
@@ -76,6 +79,8 @@ feature beyond the Next.js shell has been implemented.
   commit after explicit owner approval.
 - Confirmed that removed internal pricing and ICP content is unreachable from
   the public branch.
+- Drafted Task card 0001 for a loopback-only, dependency-free local app shell;
+  implementation remains gated on explicit owner approval.
 
 ### 2026-07-14
 
