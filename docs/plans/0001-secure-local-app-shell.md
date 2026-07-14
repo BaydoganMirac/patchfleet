@@ -1,6 +1,6 @@
 # Task card 0001: Secure local app shell
 
-Status: Approved — review amendment accepted
+Status: Completed
 
 Coordinator: Patchfleet coordinator
 
@@ -13,6 +13,10 @@ Updated: 2026-07-15
 Approved by owner: 2026-07-15
 
 Review amendment approved by owner: 2026-07-15
+
+Completed: 2026-07-15
+
+Independent review: Passed
 
 ## Objective
 

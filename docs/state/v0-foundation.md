@@ -1,10 +1,10 @@
 # V0 foundation
 
-Status: In progress
+Status: Done
 
 Last updated: 2026-07-15
 
-Baseline: pre-public clean root
+Baseline: reviewed secure local shell
 
 ## Summary
 
@@ -21,6 +21,10 @@ feature beyond the Next.js shell has been implemented.
   runtime, Cloud, account, or billing data.
 - Runnable boundary coverage verifies loopback commands, accepted and rejected
   Host values, and response security headers.
+- Independent review passed the amended browser-originated request boundary,
+  production smoke checks, build, dependency scope, and forbidden-scope audit.
+- ADR 0008 records why raw HTTP handled before Next.js middleware is not a
+  browser authorization boundary and does not justify a custom server.
 - Public repository cloned and initialized with Next.js, React, TypeScript, and
   npm.
 - Production build verified on the initial shell.
@@ -46,14 +50,13 @@ feature beyond the Next.js shell has been implemented.
 
 ## In progress
 
-- Task card 0001 is implemented. Its browser request boundary amendment is
-  awaiting independent re-review.
+- None. Foundation work is complete.
 
 ## Next up
 
-1. Re-run the independent reviewer against Task card 0001 and ADR 0008.
-2. Close Task card 0001 if the amended acceptance criteria pass.
-3. Begin provider runtime only through a later approved task.
+1. Draft Task card 0002 for the Codex read-only observation vertical slice.
+2. Obtain owner approval for its exact files and acceptance criteria.
+3. Start provider runtime only through that approved task.
 
 ## Blockers
 
@@ -89,6 +92,8 @@ feature beyond the Next.js shell has been implemented.
 - Independent review found raw HTTP forms normalized before Next.js
   middleware. The owner approved the browser-originated boundary in ADR 0008
   instead of adding a custom server that would not authorize local processes.
+- Independent re-review passed Task card 0001 with no remaining findings;
+  foundation work is complete and the worktree is clean.
 - Replaced the unpublished multi-commit public history with one clean root
   commit after explicit owner approval.
 - Confirmed that removed internal pricing and ICP content is unreachable from
