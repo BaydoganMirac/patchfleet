@@ -40,18 +40,17 @@ feature beyond the Next.js shell has been implemented.
 
 ## In progress
 
-- Task card 0001 awaits explicit owner approval. No product code has started.
+- Task card 0001 is approved. Builder implementation is the active step.
 
 ## Next up
 
-1. Approve or revise
-   [Task card 0001](../plans/0001-secure-local-app-shell.md).
-2. Implement the secure local app shell through the builder/reviewer workflow.
+1. Implement the secure local app shell through the builder workflow.
+2. Run the independent reviewer against the stable builder commit.
 3. Begin provider runtime only through a later approved task.
 
 ## Blockers
 
-- Owner approval of Task card 0001 is required before product code starts.
+- None.
 
 ## Open questions
 
@@ -80,7 +79,7 @@ feature beyond the Next.js shell has been implemented.
 - Confirmed that removed internal pricing and ICP content is unreachable from
   the public branch.
 - Drafted Task card 0001 for a loopback-only, dependency-free local app shell;
-  implementation remains gated on explicit owner approval.
+  implementation was then explicitly approved by the owner.
 
 ### 2026-07-14
 
