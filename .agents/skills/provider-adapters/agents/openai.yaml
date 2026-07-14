@@ -1,0 +1,4 @@
+interface:
+  display_name: "Provider Adapters"
+  short_description: "Build capability-aware provider adapters"
+  default_prompt: "Use $provider-adapters to add or change a provider integration without widening the shared contract."

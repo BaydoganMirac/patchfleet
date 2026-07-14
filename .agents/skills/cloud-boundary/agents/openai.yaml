@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cloud Boundary"
+  short_description: "Protect the local-to-Cloud trust boundary"
+  default_prompt: "Use $cloud-boundary to review or change pairing, sync, projections, intents, or receipts."

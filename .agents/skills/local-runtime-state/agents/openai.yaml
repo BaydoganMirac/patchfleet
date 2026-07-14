@@ -1,0 +1,4 @@
+interface:
+  display_name: "Local Runtime State"
+  short_description: "Preserve durable local events and projections"
+  default_prompt: "Use $local-runtime-state to change Patchfleet persistence, projections, or command receipts safely."

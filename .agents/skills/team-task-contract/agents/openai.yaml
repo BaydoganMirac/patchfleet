@@ -1,0 +1,4 @@
+interface:
+  display_name: "Team Task Contract"
+  short_description: "Define bounded ownership and agent handoffs"
+  default_prompt: "Use $team-task-contract to create or hand off a bounded Patchfleet team task."
