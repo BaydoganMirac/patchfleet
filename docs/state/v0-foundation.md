@@ -54,7 +54,8 @@ feature beyond the Next.js shell has been implemented.
 
 ## Next up
 
-1. Draft Task card 0002 for the Codex read-only observation vertical slice.
+1. Continue through
+   [V0 Codex observation](v0-codex-observation.md) and its Task card 0002.
 2. Obtain owner approval for its exact files and acceptance criteria.
 3. Start provider runtime only through that approved task.
 
