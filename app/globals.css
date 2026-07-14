@@ -1,10 +1,59 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, sans-serif;
+  background: Canvas;
+  color: CanvasText;
+}
+
 body {
   margin: 0;
-  font-family: system-ui, sans-serif;
 }
 
 main {
   max-width: 48rem;
-  margin: 20vh auto;
+  margin: 18vh auto;
   padding: 1.5rem;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2.5rem, 8vw, 5rem);
+  letter-spacing: -0.06em;
+}
+
+h2 {
+  margin-top: 0;
+  font-size: 1rem;
+}
+
+p {
+  line-height: 1.6;
+}
+
+.eyebrow {
+  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.summary {
+  max-width: 38rem;
+  font-size: 1.25rem;
+}
+
+section {
+  margin-top: 3rem;
+  padding: 1.25rem;
+  border: 1px solid color-mix(in srgb, CanvasText 20%, transparent);
+  border-radius: 0.75rem;
+}
+
+section p {
+  margin-bottom: 0;
 }

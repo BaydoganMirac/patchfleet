@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Patchfleet",
-  description: "Local-first control for coding agents.",
+  title: "Patchfleet local console",
+  description: "Local-only control for coding agents.",
 };
 
 export default function RootLayout({

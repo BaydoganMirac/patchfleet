@@ -3,9 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev --turbopack --hostname 127.0.0.1",
     "build": "next build --turbopack",
-    "start": "next start"
+    "start": "next start --hostname 127.0.0.1",
+    "test": "node --test tests/local-shell.test.js"
   },
   "dependencies": {
     "next": "15.5.19",

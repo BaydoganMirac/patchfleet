@@ -15,6 +15,12 @@ feature beyond the Next.js shell has been implemented.
 
 ## Done
 
+- Secure local app shell binds development and production to `127.0.0.1`,
+  validates the Host header, and sets baseline browser security headers.
+- Local console copy reports the foundation state without invented provider,
+  runtime, Cloud, account, or billing data.
+- Runnable boundary coverage verifies loopback commands, accepted and rejected
+  Host values, and response security headers.
 - Public repository cloned and initialized with Next.js, React, TypeScript, and
   npm.
 - Production build verified on the initial shell.
@@ -40,12 +46,12 @@ feature beyond the Next.js shell has been implemented.
 
 ## In progress
 
-- Task card 0001 is approved. Builder implementation is the active step.
+- Task card 0001 is implemented and awaiting independent review.
 
 ## Next up
 
-1. Implement the secure local app shell through the builder workflow.
-2. Run the independent reviewer against the stable builder commit.
+1. Run the independent reviewer against the stable Task card 0001 commit.
+2. Address only concrete review findings.
 3. Begin provider runtime only through a later approved task.
 
 ## Blockers
@@ -74,6 +80,9 @@ feature beyond the Next.js shell has been implemented.
 
 ### 2026-07-15
 
+- Implemented Task card 0001 as a dependency-free loopback-only Next.js shell
+  with fail-closed Host validation, required security headers, honest UI copy,
+  and a runnable boundary test.
 - Replaced the unpublished multi-commit public history with one clean root
   commit after explicit owner approval.
 - Confirmed that removed internal pricing and ICP content is unreachable from

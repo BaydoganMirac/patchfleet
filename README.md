@@ -13,10 +13,9 @@ local installation.
 
 ## Current status
 
-The application shell, public trust contracts, and contributor rules are
-initialized. Product code begins only from an approved task card; the first
-planned slice is a read-only local dashboard backed by one real provider
-adapter.
+The secure local-only application shell, public trust contracts, and
+contributor rules are initialized. Provider observation and controls are not
+implemented yet.
 
 Start with [the documentation map](docs/README.md) before changing code.
 
@@ -25,7 +24,12 @@ Start with [the documentation map](docs/README.md) before changing code.
     npm install
     npm run dev
 
-The local app runs at http://localhost:3000.
+The local app runs at http://127.0.0.1:3000 and accepts only `localhost` or
+`127.0.0.1` Host values. To verify the boundary:
+
+    npm test
+    npm run build
+    npm run start
 
 ## Product boundaries
 
