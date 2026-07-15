@@ -39,9 +39,10 @@ unchanged.
 
 ## Next up
 
-1. Resolve the Claude proof's required nonempty real smoke.
-2. Keep both provider proofs out of production persistence until later
-   integration work.
+1. Draft the owner-approved production integration task now that both provider
+   proofs are complete.
+2. Keep both provider proofs out of production persistence until that later
+   integration work is approved.
 
 ## Blockers
 
@@ -72,4 +73,7 @@ unchanged.
   the clean rerun passed all 27 tests.
 - Independent review passed with no P0-P2 findings; Task card 0004 completed.
 - Gemini proof completed and passed independent review; Claude code passed
-  review but awaits a nonempty real Agent View smoke.
+  review before its real-smoke correction.
+- Claude proof completed after its owner-authorized nonempty smoke exposed the
+  real Unix-millisecond creation timestamp; the provider-specific correction
+  preserved the shared lifecycle contract and passed independent re-review.

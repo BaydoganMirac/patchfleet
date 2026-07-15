@@ -1,6 +1,6 @@
 # Task card 0005: Claude Code Agent View observation proof
 
-Status: Blocked
+Status: Completed
 
 Coordinator: Patchfleet coordinator
 
@@ -14,9 +14,9 @@ Approved by owner: 2026-07-16
 
 Implementation: 2026-07-16
 
-Independent review: Passed after one focused empty-id correction
+Independent review: Passed after focused empty-id and real timestamp corrections
 
-Completion blocker: sanitized nonempty real Agent View snapshot pending
+Real-provider smoke: Passed with one sanitized nonempty Agent View snapshot
 
 Depends on: Task card 0004 completed and independently reviewed
 
@@ -101,7 +101,9 @@ Accept only a JSON array with at most a bounded input size. Select and validate:
 
 - `id` for a background session, namespaced as `job:<id>`;
 - otherwise an explicit `sessionId`, namespaced as `session:<sessionId>`;
-- `startedAt` as the provider creation timestamp;
+- `startedAt` as the provider creation timestamp, accepting canonical ISO or
+  the validated 13-digit Unix-millisecond form emitted by Agent View and
+  normalizing either to canonical ISO;
 - documented background `state` or supported live process status.
 
 Do not derive identity from name, cwd, pid, time, array position, or summary.
@@ -149,8 +151,23 @@ Tests use fake executables/process runners and cover:
 - only the three owned files change.
 - one sanitized nonempty real-provider smoke validates documented ids, state,
   and `startedAt` without printing or persisting forbidden fields.
-- no provider configuration or session is mutated.
+- the adapter does not mutate provider configuration or sessions; the
+  owner-authorized one-shot smoke setup remains outside adapter code.
 - worktree is clean after the builder commit.
+
+## Completion evidence
+
+- Claude adapter checks pass 32/32; the exact repository suite passes 68/68.
+- `npm run build` and `git diff --check` pass.
+- A sanitized real Claude Code 2.1.170 snapshot returned one session with an
+  explicit state and a valid 13-digit Unix-millisecond `startedAt`; the adapter
+  returned `available` and canonicalized the timestamp without printing an id
+  or native field.
+- The owner explicitly authorized one harmless background session solely to
+  make the required nonempty smoke possible. The adapter itself still invokes
+  only the two read-only supported commands in this task.
+- Independent re-review of correction commit `8173c72` passed with no P0-P2
+  findings.
 
 ## Stop conditions
 

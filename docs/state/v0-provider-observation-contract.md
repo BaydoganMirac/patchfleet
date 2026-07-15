@@ -38,9 +38,8 @@ Independent review passed after one focused SemVer correction.
 
 ## Next up
 
-1. Resolve the Claude proof's required nonempty real smoke.
-2. Draft later production integration only after the provider proofs are
-   complete and their real differences remain explicit.
+1. Draft the owner-approved production integration task now that the Claude
+   and Gemini proofs are complete and their real differences are explicit.
 
 ## Blockers
 
@@ -79,4 +78,7 @@ Independent review passed after one focused SemVer correction.
 - Proposed ADR 0010 and disjoint Task cards 0004-0006; follow-on work now lives
   in provider-specific and lifecycle-contract state files.
 - Task card 0004 and Gemini Task card 0006 completed with independent review;
-  Claude Task card 0005 is review-clean and blocked only on nonempty smoke.
+  Claude Task card 0005 had completed code and review before its real smoke.
+- Claude Task card 0005 completed after an owner-authorized nonempty smoke
+  exposed Unix-millisecond `startedAt`; the focused correction and independent
+  re-review passed without widening the shared contract.
