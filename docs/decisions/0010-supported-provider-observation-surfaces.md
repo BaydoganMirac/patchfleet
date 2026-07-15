@@ -1,6 +1,6 @@
 # ADR 0010: Supported provider observation surfaces and lifecycle ingress
 
-Status: Proposed
+Status: Accepted
 
 Date: 2026-07-16
 

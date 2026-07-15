@@ -5,7 +5,7 @@
 | V0 foundation | Done | 2026-07-15 | [v0-foundation.md](v0-foundation.md) |
 | V0 Codex observation | Done | 2026-07-15 | [v0-codex-observation.md](v0-codex-observation.md) |
 | V0 provider observation contract | Done | 2026-07-16 | [v0-provider-observation-contract.md](v0-provider-observation-contract.md) |
-| V0 provider lifecycle contract | Planned | 2026-07-16 | [v0-provider-lifecycle-contract.md](v0-provider-lifecycle-contract.md) |
+| V0 provider lifecycle contract | In progress | 2026-07-16 | [v0-provider-lifecycle-contract.md](v0-provider-lifecycle-contract.md) |
 | V0 Claude Code observation | Planned | 2026-07-16 | [v0-claude-observation.md](v0-claude-observation.md) |
 | V0 Gemini CLI observation | Planned | 2026-07-16 | [v0-gemini-observation.md](v0-gemini-observation.md) |
 

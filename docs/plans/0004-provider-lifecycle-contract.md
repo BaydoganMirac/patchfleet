@@ -1,6 +1,6 @@
 # Task card 0004: Provider lifecycle contract bridge
 
-Status: Proposed
+Status: Approved
 
 Coordinator: Patchfleet coordinator
 
@@ -10,7 +10,7 @@ Reviewer: independent reviewer after the builder commit
 
 Updated: 2026-07-16
 
-Approved by owner: pending
+Approved by owner: 2026-07-16
 
 ## Objective
 
@@ -70,7 +70,7 @@ runtime, UI, package metadata, an ADR, or another feature state.
 - [Task card 0003](0003-provider-observation-conformance.md);
 - [ADR 0002](../decisions/0002-provider-adapters.md);
 - [ADR 0009](../decisions/0009-codex-observation-uses-supported-app-server-metadata.md);
-- [Proposed ADR 0010](../decisions/0010-supported-provider-observation-surfaces.md);
+- [ADR 0010](../decisions/0010-supported-provider-observation-surfaces.md);
 - `.agents/skills/provider-adapters/SKILL.md`;
 - `.agents/skills/team-task-contract/SKILL.md`;
 - `lib/domain/observation.mjs`;

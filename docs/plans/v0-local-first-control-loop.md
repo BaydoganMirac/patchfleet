@@ -14,12 +14,13 @@ rebuilds the local projection, and preserves `unknown` when cross-client live
 state is not explicit. Completed
 [Task card 0003](0003-provider-observation-conformance.md) adds the independently
 reviewed shared test-only conformance contract. Claude Code and Gemini CLI
-supported-surface discovery is complete. [Proposed ADR 0010](../decisions/0010-supported-provider-observation-surfaces.md),
+supported-surface discovery is complete. [ADR 0010](../decisions/0010-supported-provider-observation-surfaces.md),
 [Task card 0004](0004-provider-lifecycle-contract.md),
 [Task card 0005](0005-claude-code-agent-view-observation.md), and
 [Task card 0006](0006-gemini-cli-hook-observation.md) define a contract-first
 sequence: integration-owner bridge, then disjoint Claude and Gemini adapter
-proofs. All three await owner approval.
+proofs. The owner approved all three; Task card 0004 is now in progress and
+Task cards 0005-0006 wait for its independent review.
 
 ## Goal
 

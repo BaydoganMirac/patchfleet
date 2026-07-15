@@ -1,6 +1,6 @@
 # Task card 0006: Gemini CLI hook observation proof
 
-Status: Proposed
+Status: Approved
 
 Coordinator: Patchfleet coordinator
 
@@ -10,7 +10,7 @@ Reviewer: independent reviewer after the builder commit
 
 Updated: 2026-07-16
 
-Approved by owner: pending
+Approved by owner: 2026-07-16
 
 Depends on: Task card 0004 completed and independently reviewed
 
@@ -67,7 +67,7 @@ route, UI, settings, package metadata, ADR, plan, or another feature state.
 - `docs/agent-operating-model.md`;
 - [Task card 0003](0003-provider-observation-conformance.md);
 - [Task card 0004](0004-provider-lifecycle-contract.md);
-- [Proposed ADR 0010](../decisions/0010-supported-provider-observation-surfaces.md);
+- [ADR 0010](../decisions/0010-supported-provider-observation-surfaces.md);
 - `.agents/skills/provider-adapters/SKILL.md`;
 - `.agents/skills/team-task-contract/SKILL.md`;
 - `lib/domain/provider-lifecycle-signal.mjs`;

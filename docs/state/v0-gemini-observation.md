@@ -25,7 +25,7 @@ separate owner-approved work.
 
 ## In progress
 
-- Owner review of the proposed task sequence.
+- None. The task is approved and waiting for Task card 0004.
 
 ## Next up
 
