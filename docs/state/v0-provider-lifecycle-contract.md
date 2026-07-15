@@ -39,8 +39,9 @@ unchanged.
 
 ## Next up
 
-1. Start the approved Claude and Gemini adapter proofs in parallel.
-2. Keep both proofs out of production persistence until later integration work.
+1. Resolve the Claude proof's required nonempty real smoke.
+2. Keep both provider proofs out of production persistence until later
+   integration work.
 
 ## Blockers
 
@@ -70,3 +71,5 @@ unchanged.
 - One initial full-suite run hit an existing timing-sensitive Codex fixture;
   the clean rerun passed all 27 tests.
 - Independent review passed with no P0-P2 findings; Task card 0004 completed.
+- Gemini proof completed and passed independent review; Claude code passed
+  review but awaits a nonempty real Agent View smoke.

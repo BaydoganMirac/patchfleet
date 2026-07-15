@@ -1,6 +1,6 @@
 # Task card 0006: Gemini CLI hook observation proof
 
-Status: Approved
+Status: Completed
 
 Coordinator: Patchfleet coordinator
 
@@ -11,6 +11,10 @@ Reviewer: independent reviewer after the builder commit
 Updated: 2026-07-16
 
 Approved by owner: 2026-07-16
+
+Completed: 2026-07-16
+
+Independent review: Passed after shared test-runner stabilization
 
 Depends on: Task card 0004 completed and independently reviewed
 

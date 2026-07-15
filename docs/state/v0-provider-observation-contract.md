@@ -38,9 +38,9 @@ Independent review passed after one focused SemVer correction.
 
 ## Next up
 
-1. Obtain owner approval for proposed ADR 0010 and Task card 0004.
-2. Complete and independently review the provider lifecycle contract bridge.
-3. Run the disjoint Claude Code and Gemini CLI proof tasks in parallel.
+1. Resolve the Claude proof's required nonempty real smoke.
+2. Draft later production integration only after the provider proofs are
+   complete and their real differences remain explicit.
 
 ## Blockers
 
@@ -78,3 +78,5 @@ Independent review passed after one focused SemVer correction.
 - Completed Claude Code and Gemini CLI supported-surface discovery.
 - Proposed ADR 0010 and disjoint Task cards 0004-0006; follow-on work now lives
   in provider-specific and lifecycle-contract state files.
+- Task card 0004 and Gemini Task card 0006 completed with independent review;
+  Claude Task card 0005 is review-clean and blocked only on nonempty smoke.

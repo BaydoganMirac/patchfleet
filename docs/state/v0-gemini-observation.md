@@ -1,13 +1,13 @@
 # V0 Gemini CLI observation
 
-Status: Review pending
+Status: Done
 
 Last updated: 2026-07-16
 
 ## Summary
 
 Gemini CLI 0.43.0 has no safe machine-readable cross-client session inventory.
-Task card 0006 proposes a version probe and pure command-hook decoder proof,
+Task card 0006 delivered a version probe and pure command-hook decoder proof,
 with configuration, ingestion, persistence, and UI integration deferred to
 separate owner-approved work.
 
@@ -30,27 +30,24 @@ separate owner-approved work.
   `running`, and `completed`; `SessionEnd` produces no transition.
 - Proved forbidden hook values do not enter returned signals or errors and no
   provider settings, history, prompt, ACP, or headless surface is used.
-- Passed 9 targeted tests, 60 serial full-suite tests, the production build,
+- Passed targeted checks, all 62 repository tests, the production build,
   and a real version-only smoke against Gemini CLI 0.43.0.
+- Independent review passed with no P0-P2 findings after the coordinator
+  stabilized shared process-test execution.
 
 ## In progress
 
-- Independent review of the Task card 0006 Builder commit.
+- None. Task card 0006 is complete.
 
 ## Next up
 
-1. Review the pure decoder proof independently.
-2. Resolve the existing default-parallel test-runner timeout flake across the
-   provider suites in coordinator-owned test configuration or provider tasks.
-3. Only then draft explicit hook setup and secure single-writer ingestion work.
+1. Draft explicit hook setup and secure single-writer ingestion work only after
+   owner approval.
 
 ## Blockers
 
-- Dashboard availability depends on later explicit setup and integration tasks.
-- Bare `npm test` can exhaust the 500 ms fake-process timeouts when the Claude,
-  Codex, Gemini, and Next.js test files run concurrently. The same 60 tests pass
-  with Node's built-in `--test-concurrency=1`; changing shared test
-  configuration is outside this task's owned files.
+- None for the adapter proof. Dashboard availability remains later setup and
+  integration work.
 
 ## Open questions
 
@@ -72,5 +69,7 @@ separate owner-approved work.
 - Owner approved Task card 0006; Task card 0004 passed review and the Builder
   implementation started.
 - Completed the three-file Builder implementation without hook installation,
-  persistence, settings access, or a new dependency; independent review is
-  pending.
+  persistence, settings access, or a new dependency.
+- Coordinator serialized provider test files and corrected existing Codex
+  fixture deadlines; the exact suite passes 62/62.
+- Independent re-review passed with no P0-P2 findings; Task card 0006 completed.

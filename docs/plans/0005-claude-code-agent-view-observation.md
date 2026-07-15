@@ -1,6 +1,6 @@
 # Task card 0005: Claude Code Agent View observation proof
 
-Status: Approved
+Status: Blocked
 
 Coordinator: Patchfleet coordinator
 
@@ -11,6 +11,12 @@ Reviewer: independent reviewer after the builder commit
 Updated: 2026-07-16
 
 Approved by owner: 2026-07-16
+
+Implementation: 2026-07-16
+
+Independent review: Passed after one focused empty-id correction
+
+Completion blocker: sanitized nonempty real Agent View snapshot pending
 
 Depends on: Task card 0004 completed and independently reviewed
 

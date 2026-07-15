@@ -19,8 +19,9 @@ supported-surface discovery is complete. [ADR 0010](../decisions/0010-supported-
 [Task card 0005](0005-claude-code-agent-view-observation.md), and
 [Task card 0006](0006-gemini-cli-hook-observation.md) define a contract-first
 sequence: integration-owner bridge, then disjoint Claude and Gemini adapter
-proofs. The owner approved all three. Task card 0004 is complete and
-independently reviewed; Task cards 0005-0006 are in parallel execution.
+proofs. Task cards 0004 and 0006 are complete and independently reviewed. Task
+card 0005 is code-complete and review-clean but remains blocked until a
+sanitized nonempty real Agent View snapshot validates the installed schema.
 
 ## Goal
 
