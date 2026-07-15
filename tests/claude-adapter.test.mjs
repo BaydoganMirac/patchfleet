@@ -154,6 +154,8 @@ test("empty, degraded, and unavailable observations pass shared conformance", as
 test("Agent View rejects malformed snapshots instead of inventing identity or lifecycle", async (t) => {
   const cases = [
     ["missing id", [{ state: "working", startedAt: NOW.toISOString() }]],
+    ["empty background id", [background("", "working")]],
+    ["empty live session id", [{ sessionId: "", status: "running", startedAt: NOW.toISOString() }]],
     ["duplicate id", [background("same", "working"), background("same", "done")]],
     ["oversized id", [background("a".repeat(253), "working")]],
     ["invalid id", [background("invalid id", "working")]],
