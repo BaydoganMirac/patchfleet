@@ -24,7 +24,11 @@ reviewed. Claude's
 sanitized nonempty real Agent View smoke validated the installed schema after a
 focused Unix-millisecond timestamp correction. The next approval gate is the
 production integration-owner slice; provider proofs remain outside production
-persistence and UI until that task is approved.
+persistence and UI until that task is approved. The owner approved
+[ADR 0011](../decisions/0011-multi-provider-observation-projection.md) and
+[Task card 0007](0007-multi-provider-production-observation.md): integrate the
+three pull/probe observations first, while keeping Gemini hook setup and secure
+lifecycle ingress as a separate task.
 
 ## Goal
 

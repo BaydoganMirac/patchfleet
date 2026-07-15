@@ -15,3 +15,4 @@ supersedes the old one.
 | [0008](0008-browser-originated-local-request-boundary.md) | Accepted | Protect the local browser surface without a custom raw HTTP server |
 | [0009](0009-codex-observation-uses-supported-app-server-metadata.md) | Accepted | Observe only supported Codex lifecycle metadata and preserve unknown state |
 | [0010](0010-supported-provider-observation-surfaces.md) | Accepted | Use supported Claude JSON and opt-in Gemini hooks behind a minimal lifecycle ingress |
+| [0011](0011-multi-provider-observation-projection.md) | Accepted | Project the three provider observations together before adding Gemini hook ingress |

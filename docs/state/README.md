@@ -8,6 +8,7 @@
 | V0 provider lifecycle contract | Done | 2026-07-16 | [v0-provider-lifecycle-contract.md](v0-provider-lifecycle-contract.md) |
 | V0 Claude Code observation | Done | 2026-07-16 | [v0-claude-observation.md](v0-claude-observation.md) |
 | V0 Gemini CLI observation | Done | 2026-07-16 | [v0-gemini-observation.md](v0-gemini-observation.md) |
+| V0 provider production integration | In progress | 2026-07-16 | [v0-provider-integration.md](v0-provider-integration.md) |
 
 State files are resumable handoffs. Update the relevant file whenever a work
 session changes implementation status, blockers, decisions, or next steps.
