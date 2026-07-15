@@ -13,7 +13,7 @@ It probes the supported app-server protocol, persists sanitized lifecycle facts,
 rebuilds the local projection, and preserves `unknown` when cross-client live
 state is not explicit. The shared conformance contract, Claude adapter, and
 Gemini adapter remain pending. [Task card 0003](0003-provider-observation-conformance.md)
-proposes the test-only conformance freeze and awaits owner approval.
+defines the approved test-only conformance freeze and is in implementation.
 
 ## Goal
 
