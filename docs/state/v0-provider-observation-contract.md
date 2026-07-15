@@ -1,16 +1,15 @@
 # V0 provider observation contract
 
-Status: Review fix complete; re-review pending
+Status: Done
 
 Last updated: 2026-07-15
 
 ## Summary
 
-Task card 0003 defines one approved, reusable, test-only conformance helper for the
+Task card 0003 delivered one reusable, test-only conformance helper for the
 normalized observation shape proven by Codex. It deliberately avoids a
 production adapter abstraction until a second real provider proves the seam.
-The Builder implementation and focused SemVer review fix are complete and
-awaiting independent re-review.
+Independent review passed after one focused SemVer correction.
 
 ## Done
 
@@ -31,17 +30,17 @@ awaiting independent re-review.
 - Replaced the permissive version pattern after review with the official
   ECMAScript-compatible SemVer 2.0.0 expression and covered leading zeroes,
   empty prerelease identifiers, and valid prerelease plus build metadata.
+- Independent re-review passed with no remaining P0-P2 findings.
 
 ## In progress
 
-- Independent re-review of the focused SemVer fix commit.
+- None. Task card 0003 is complete.
 
 ## Next up
 
-1. Start an independent Reviewer after the Builder commit.
-2. Address only review findings within the approved scope.
-3. Draft disjoint Claude Code, Gemini CLI, and integration-owner task cards
-   only after conformance passes.
+1. Inspect the supported machine-readable Claude Code and Gemini CLI surfaces.
+2. Draft disjoint Claude Code, Gemini CLI, and integration-owner task cards.
+3. Obtain owner approval before provider-parallel implementation starts.
 
 ## Blockers
 
@@ -70,3 +69,4 @@ awaiting independent re-review.
 - Independent review found the version expression accepted invalid leading
   zero and empty prerelease forms and rejected combined prerelease/build forms;
   the follow-up fix now covers all three cases.
+- Independent re-review passed with no remaining P0-P2 findings.

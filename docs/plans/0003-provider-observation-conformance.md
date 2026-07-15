@@ -1,6 +1,6 @@
 # Task card 0003: Provider observation conformance freeze
 
-Status: Approved
+Status: Completed
 
 Coordinator: Patchfleet coordinator
 
@@ -11,6 +11,10 @@ Reviewer: independent reviewer after the builder commit
 Updated: 2026-07-15
 
 Approved by owner: 2026-07-15
+
+Completed: 2026-07-15
+
+Independent review: Passed after one P2 correction
 
 ## Objective
 
