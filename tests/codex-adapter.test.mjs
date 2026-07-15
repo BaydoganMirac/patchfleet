@@ -3,9 +3,25 @@ import { chmod, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
+import { safeObservationError } from "../lib/domain/observation.mjs";
 import { observeCodex, probeCodex } from "../lib/providers/codex.mjs";
+import { assertProviderObservation } from "./support/provider-observation-conformance.mjs";
 
 const NOW = new Date("2026-07-15T12:00:00.000Z");
+const CODEX_PROVIDER = Object.freeze({ id: "codex", displayName: "Codex" });
+const CODEX_ERRORS = Object.freeze(Object.fromEntries([
+  "CODEX_APP_SERVER_EXITED",
+  "CODEX_APP_SERVER_START_FAILED",
+  "CODEX_APP_SERVER_TIMEOUT",
+  "CODEX_NOT_FOUND",
+  "CODEX_PROBE_FAILED",
+  "CODEX_PROBE_TIMEOUT",
+  "CODEX_PROTOCOL_INVALID_JSON",
+  "CODEX_PROTOCOL_MALFORMED",
+  "CODEX_PROTOCOL_METHOD_ERROR",
+  "CODEX_SYSTEM_ERROR",
+  "CODEX_VERSION_MALFORMED",
+].map((code) => [code, safeObservationError(code).message])));
 const CANARIES = [
   "CANARY_PROMPT",
   "CANARY_TRANSCRIPT",
@@ -104,6 +120,7 @@ test("app-server normalizes explicit lifecycle only and drops forbidden native d
   assert.equal(result.provider.state, "degraded");
   assert.equal(result.provider.version, "1.2.3");
   assert.equal(result.provider.error.code, "CODEX_SYSTEM_ERROR");
+  assertProviderObservation(result, CODEX_PROVIDER, CODEX_ERRORS);
   assert.deepEqual(
     Object.fromEntries(result.sessions.map((session) => [session.providerSessionId, session.status])),
     {
@@ -121,6 +138,23 @@ test("app-server normalizes explicit lifecycle only and drops forbidden native d
   const serialized = JSON.stringify(result);
   for (const canary of CANARIES) assert.equal(serialized.includes(canary), false, canary);
   assert.equal(await readFile(marker, "utf8"), "start\nstop\n");
+});
+
+test("available and executable-unavailable observations pass shared conformance", async () => {
+  const { command } = await fakeCodex("success");
+  const available = await observeCodex({ command, timeoutMs: 1_000, now: () => NOW });
+  assert.equal(available.provider.state, "available");
+  assert.equal(available.sessions.find((session) => session.providerSessionId === "active-id").status, "running");
+  assert.equal(available.sessions.find((session) => session.providerSessionId === "completed-id").status, "completed");
+  assertProviderObservation(available, CODEX_PROVIDER, CODEX_ERRORS);
+
+  const unavailable = await observeCodex({
+    command: `missing-codex-${process.pid}`,
+    timeoutMs: 100,
+    now: () => NOW,
+  });
+  assert.equal(unavailable.provider.state, "unavailable");
+  assertProviderObservation(unavailable, CODEX_PROVIDER, CODEX_ERRORS);
 });
 
 test("app-server failures degrade safely and always clean up the child", async (t) => {
