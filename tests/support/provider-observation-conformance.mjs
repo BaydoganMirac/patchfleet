@@ -10,7 +10,7 @@ const SESSION_STATES = new Set([
 ]);
 const TERMINAL_STATES = new Set(["completed", "failed", "interrupted"]);
 const OPAQUE_ID = /^[A-Za-z0-9._:-]{1,256}$/;
-const VERSION = /^\d+\.\d+\.\d+(?:[-+][A-Za-z0-9.-]+)?$/;
+const VERSION = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/;
 
 function record(value, name) {
   assert(value && typeof value === "object" && !Array.isArray(value), `${name} must be an object`);

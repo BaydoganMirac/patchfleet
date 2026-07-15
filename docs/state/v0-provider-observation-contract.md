@@ -1,6 +1,6 @@
 # V0 provider observation contract
 
-Status: Builder complete; independent review pending
+Status: Review fix complete; re-review pending
 
 Last updated: 2026-07-15
 
@@ -9,7 +9,8 @@ Last updated: 2026-07-15
 Task card 0003 defines one approved, reusable, test-only conformance helper for the
 normalized observation shape proven by Codex. It deliberately avoids a
 production adapter abstraction until a second real provider proves the seam.
-The Builder implementation is complete and awaiting independent review.
+The Builder implementation and focused SemVer review fix are complete and
+awaiting independent re-review.
 
 ## Done
 
@@ -27,10 +28,13 @@ The Builder implementation is complete and awaiting independent review.
 - Reused the helper from Codex available, degraded, and executable-unavailable
   observations without changing production code.
 - Passed all 24 tests, the production build, and `git diff --check`.
+- Replaced the permissive version pattern after review with the official
+  ECMAScript-compatible SemVer 2.0.0 expression and covered leading zeroes,
+  empty prerelease identifiers, and valid prerelease plus build metadata.
 
 ## In progress
 
-- Independent review of the stable Builder commit.
+- Independent re-review of the focused SemVer fix commit.
 
 ## Next up
 
@@ -63,3 +67,6 @@ The Builder implementation is complete and awaiting independent review.
 - Owner approved Task card 0003; Builder implementation is authorized.
 - Builder added the test-only conformance helper and consumed it from Codex
   available, degraded, and unavailable paths; all tests and the build passed.
+- Independent review found the version expression accepted invalid leading
+  zero and empty prerelease forms and rejected combined prerelease/build forms;
+  the follow-up fix now covers all three cases.

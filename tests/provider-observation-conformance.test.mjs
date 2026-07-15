@@ -24,6 +24,9 @@ const valid = {
 
 test("provider observation conformance accepts the minimum valid shape", () => {
   assert.doesNotThrow(() => assertProviderObservation(valid, PROVIDER, ERRORS));
+  const prerelease = structuredClone(valid);
+  prerelease.provider.version = "1.2.3-alpha+001";
+  assert.doesNotThrow(() => assertProviderObservation(prerelease, PROVIDER, ERRORS));
 });
 
 test("provider observation conformance rejects unsafe normalized output", () => {
@@ -36,6 +39,8 @@ test("provider observation conformance rejects unsafe normalized output", () => 
     ["duplicate session id", (value) => { value.sessions.push(structuredClone(value.sessions[0])); }],
     ["invalid lifecycle", (value) => { value.sessions[0].status = "paused"; }],
     ["invalid timestamp", (value) => { value.observedAt = "not-a-timestamp"; }],
+    ["leading zero version", (value) => { value.provider.version = "01.2.3"; }],
+    ["empty prerelease identifier", (value) => { value.provider.version = "1.2.3-."; }],
     ["terminal timestamp on running session", (value) => {
       value.sessions[0].terminalAt = "2026-07-15T12:00:00.000Z";
     }],
