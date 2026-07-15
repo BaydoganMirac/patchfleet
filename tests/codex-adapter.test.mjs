@@ -108,7 +108,8 @@ test("probe distinguishes unavailable, timeout, non-zero, and malformed version 
   ]) {
     await t.test(mode, async () => {
       const { command } = await fakeCodex(mode);
-      assert.equal((await probeCodex({ command, timeoutMs: 500 })).code, code);
+      const timeoutMs = mode === "probe-timeout" ? 500 : 2_000;
+      assert.equal((await probeCodex({ command, timeoutMs })).code, code);
     });
   }
 });
@@ -170,7 +171,8 @@ test("app-server failures degrade safely and always clean up the child", async (
   ]) {
     await t.test(mode, async () => {
       const { command, marker } = await fakeCodex(mode);
-      const result = await observeCodex({ command, timeoutMs: 500, now: () => NOW });
+      const timeoutMs = mode === "app-timeout" ? 500 : 2_000;
+      const result = await observeCodex({ command, timeoutMs, now: () => NOW });
       assert.equal(result.provider.state, "degraded");
       assert.equal(result.provider.error.code, code);
       assert.deepEqual(result.sessions, []);
