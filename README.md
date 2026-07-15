@@ -13,9 +13,9 @@ local installation.
 
 ## Current status
 
-The secure local-only application shell, public trust contracts, and
-contributor rules are initialized. Provider observation and controls are not
-implemented yet.
+The local console can probe Codex and persist a sanitized, read-only lifecycle
+snapshot through the supported app-server JSONL protocol. Provider control,
+Claude Code, Gemini CLI, and Cloud connectivity are not implemented yet.
 
 Start with [the documentation map](docs/README.md) before changing code.
 
@@ -25,7 +25,11 @@ Start with [the documentation map](docs/README.md) before changing code.
     npm run dev
 
 The local app runs at http://127.0.0.1:3000 and accepts only `localhost` or
-`127.0.0.1` Host values. To verify the boundary:
+`127.0.0.1` Host values. Use **Refresh Codex** to store up to 20 recent
+interactive sessions. Patchfleet does not read Codex private files or retain
+prompts, titles, paths, transcripts, tools, diffs, reasoning, or tokens.
+
+To verify the boundary:
 
     npm test
     npm run build

@@ -14,20 +14,35 @@ body {
 }
 
 main {
-  max-width: 48rem;
-  margin: 18vh auto;
-  padding: 1.5rem;
+  width: min(100% - 2rem, 64rem);
+  margin: 0 auto;
+  padding: clamp(2rem, 8vw, 6rem) 0;
+}
+
+.hero,
+.section-heading,
+.sessions li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+h1,
+h2,
+p {
+  margin-top: 0;
 }
 
 h1 {
-  margin: 0;
-  font-size: clamp(2.5rem, 8vw, 5rem);
+  margin-bottom: 0.75rem;
+  font-size: clamp(2.75rem, 8vw, 5rem);
   letter-spacing: -0.06em;
 }
 
 h2 {
-  margin-top: 0;
-  font-size: 1rem;
+  margin-bottom: 0;
+  font-size: 1.25rem;
 }
 
 p {
@@ -35,7 +50,7 @@ p {
 }
 
 .eyebrow {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -43,17 +58,145 @@ p {
 }
 
 .summary {
-  max-width: 38rem;
-  font-size: 1.25rem;
+  max-width: 40rem;
+  margin-bottom: 0;
+  font-size: 1.1rem;
+}
+
+button {
+  min-height: 2.75rem;
+  padding: 0.65rem 1rem;
+  border: 1px solid CanvasText;
+  border-radius: 0.55rem;
+  background: CanvasText;
+  color: Canvas;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button:focus-visible {
+  outline: 3px solid Highlight;
+  outline-offset: 3px;
 }
 
 section {
-  margin-top: 3rem;
+  margin-top: 2rem;
   padding: 1.25rem;
   border: 1px solid color-mix(in srgb, CanvasText 20%, transparent);
   border-radius: 0.75rem;
 }
 
-section p {
-  margin-bottom: 0;
+.notice p,
+.empty,
+.snapshot,
+.safe-error {
+  margin: 0.75rem 0 0;
+}
+
+.error,
+.safe-error {
+  border-color: color-mix(in srgb, Mark 60%, CanvasText);
+}
+
+.safe-error {
+  padding: 0.75rem;
+  border: 1px solid;
+  border-radius: 0.5rem;
+}
+
+.safe-error code {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+}
+
+dl {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+dt,
+.snapshot,
+.sessions p,
+.session-state small {
+  color: color-mix(in srgb, CanvasText 68%, transparent);
+}
+
+dt {
+  font-size: 0.8rem;
+}
+
+dd {
+  margin: 0.25rem 0 0;
+  font-weight: 700;
+}
+
+.badge,
+.count {
+  display: inline-flex;
+  width: fit-content;
+  padding: 0.3rem 0.55rem;
+  border: 1px solid color-mix(in srgb, CanvasText 30%, transparent);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.badge.running,
+.badge.available {
+  border-color: LinkText;
+}
+
+.badge.failed,
+.badge.degraded,
+.badge.unavailable {
+  border-color: Mark;
+}
+
+.sessions {
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sessions li {
+  padding: 1rem 0;
+  border-top: 1px solid color-mix(in srgb, CanvasText 14%, transparent);
+}
+
+.sessions p {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+}
+
+.session-state {
+  display: grid;
+  justify-items: end;
+  gap: 0.4rem;
+  text-align: right;
+}
+
+@media (max-width: 40rem) {
+  .hero,
+  .sessions li {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .hero button {
+    width: 100%;
+  }
+
+  dl {
+    grid-template-columns: 1fr;
+  }
+
+  .session-state {
+    justify-items: start;
+    text-align: left;
+  }
 }

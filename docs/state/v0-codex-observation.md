@@ -1,6 +1,6 @@
 # V0 Codex observation
 
-Status: In progress
+Status: Builder complete; review pending
 
 Last updated: 2026-07-15
 
@@ -8,7 +8,8 @@ Last updated: 2026-07-15
 
 Task card 0002 defines the first real provider vertical slice: supported Codex
 app-server observation, append-only local facts, a rebuildable projection, and
-an honest local dashboard. The owner approved implementation.
+an honest local dashboard. The approved Builder implementation is complete and
+ready for independent review.
 
 ## Done
 
@@ -22,16 +23,26 @@ an honest local dashboard. The owner approved implementation.
 - [Task card 0002](../plans/0002-codex-read-only-observation.md) drafted.
 - [ADR 0009](../decisions/0009-codex-observation-uses-supported-app-server-metadata.md)
   accepted for the honest lifecycle boundary.
+- Added a bounded Codex CLI probe and one-shot app-server stdio JSONL observer.
+- Added strict normalized data allowlists, safe error codes, append-only events,
+  serialized durable writes, deterministic replay, and atomic projection files.
+- Added a same-origin bodyless refresh route and a server-rendered dashboard for
+  never-observed, unavailable, degraded, empty, populated, stale, and corrupt
+  local states.
+- Added adapter, recovery, redaction, request-boundary, production, and restart
+  checks without changing dependencies or the lockfile.
+- A sanitized real Codex smoke detected the installed version, observed 20
+  recent sessions, and persisted no forbidden field or absolute path.
 
 ## In progress
 
-- Builder implementation of the approved Task card 0002 slice.
+- Independent review of the stable Builder commit.
 
 ## Next up
 
-1. Complete the bounded Builder implementation and local commit.
-2. Run the independent Reviewer against that stable commit.
-3. Address only concrete review findings.
+1. Run the independent Reviewer against the stable Builder commit.
+2. Address only concrete review findings.
+3. Freeze the proven observation contract before the next provider adapter.
 
 ## Blockers
 
@@ -44,7 +55,7 @@ an honest local dashboard. The owner approved implementation.
 - Which equivalent structured lifecycle fields can Claude Code and Gemini CLI
   prove after the Codex contract is complete?
 
-## Decisions proposed
+## Decisions applied
 
 - Use only app-server stdio JSONL; never inspect Codex private state files.
 - Observe 20 recent interactive sessions instead of adding pagination or a
@@ -59,3 +70,6 @@ an honest local dashboard. The owner approved implementation.
 - Completed provider-surface discovery and drafted the approval-gated first
   Codex observation slice.
 - Owner approved Task card 0002 and ADR 0009; Builder implementation started.
+- Builder completed the supported read-only observation, durable projection,
+  local dashboard, request boundary, recovery checks, production smoke, and a
+  sanitized real-provider smoke without adding dependencies.

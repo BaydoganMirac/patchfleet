@@ -1,9 +1,11 @@
 const assert = require("node:assert/strict");
 const { spawn } = require("node:child_process");
 const { once } = require("node:events");
+const { chmod, mkdtemp, readFile, writeFile } = require("node:fs/promises");
 const { request } = require("node:http");
 const { createServer } = require("node:net");
-const { readFile } = require("node:fs/promises");
+const { tmpdir } = require("node:os");
+const { delimiter, join } = require("node:path");
 const { test } = require("node:test");
 
 const requiredHeaders = {
@@ -23,25 +25,37 @@ async function freePort() {
   return port;
 }
 
-function fetch(port, host, setHost = true) {
+function fetch(port, { host = `127.0.0.1:${port}`, path = "/", method = "GET", headers = {}, setHost = true, body } = {}) {
   return new Promise((resolve, reject) => {
     const req = request(
-      { host: "127.0.0.1", port, path: "/", headers: host ? { host } : {}, setHost },
+      {
+        host: "127.0.0.1",
+        port,
+        path,
+        method,
+        headers: { ...(host ? { host } : {}), ...headers },
+        setHost,
+      },
       (res) => {
-        res.resume();
-        res.on("end", () => resolve(res));
+        const chunks = [];
+        res.on("data", (chunk) => chunks.push(chunk));
+        res.on("end", () => resolve({
+          statusCode: res.statusCode,
+          headers: res.headers,
+          body: Buffer.concat(chunks).toString("utf8"),
+        }));
       },
     );
     req.on("error", reject);
-    req.end();
+    req.end(body);
   });
 }
 
 async function waitForServer(port, child) {
-  for (let attempt = 0; attempt < 100; attempt += 1) {
+  for (let attempt = 0; attempt < 150; attempt += 1) {
     if (child.exitCode !== null) throw new Error("Next.js exited before serving");
     try {
-      await fetch(port, `127.0.0.1:${port}`);
+      await fetch(port);
       return;
     } catch {
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -50,38 +64,200 @@ async function waitForServer(port, child) {
   throw new Error("Timed out waiting for Next.js");
 }
 
-test("local shell binds to loopback and enforces its request boundary", { timeout: 30000 }, async () => {
+async function startNext(dataDir, binDir) {
+  const port = await freePort();
+  const production = process.env.PATCHFLEET_TEST_PRODUCTION === "1";
+  const child = spawn(
+    process.execPath,
+    [
+      require.resolve("next/dist/bin/next"),
+      production ? "start" : "dev",
+      ...(production ? [] : ["--turbopack"]),
+      "--hostname",
+      "127.0.0.1",
+      "--port",
+      String(port),
+    ],
+    {
+      env: {
+        ...process.env,
+        PATCHFLEET_DATA_DIR: dataDir,
+        PATH: `${binDir}${delimiter}${process.env.PATH}`,
+      },
+      stdio: "ignore",
+    },
+  );
+  await waitForServer(port, child);
+  return { child, port };
+}
+
+async function stopNext(child) {
+  if (child.exitCode !== null) return;
+  const exited = once(child, "exit");
+  child.kill("SIGTERM");
+  await exited;
+}
+
+async function fakeCodex() {
+  const binDir = await mkdtemp(join(tmpdir(), "patchfleet-web-bin-"));
+  const command = join(binDir, "codex");
+  const marker = join(binDir, "marker");
+  const source = `#!/usr/bin/env node
+const fs = require("node:fs");
+const readline = require("node:readline");
+const marker = ${JSON.stringify(marker)};
+if (process.argv.includes("--version")) console.log("codex-cli 1.2.3");
+else {
+  fs.appendFileSync(marker, "start\\n");
+  process.on("SIGTERM", () => { fs.appendFileSync(marker, "stop\\n"); process.exit(0); });
+  const send = (value) => process.stdout.write(JSON.stringify(value) + "\\n");
+  readline.createInterface({ input: process.stdin }).on("line", (line) => {
+    const message = JSON.parse(line);
+    if (message.method === "initialized") return;
+    if (message.method === "initialize") return send({ id: message.id, result: { codexHome: "/private/CANARY_PATH" } });
+    if (message.method === "thread/list") return send({ id: message.id, result: { data: [{ id: "web-session-id", preview: "CANARY_PROMPT" }] } });
+    if (message.method === "thread/read") return send({ id: message.id, result: { thread: {
+      id: "web-session-id", createdAt: 1700000000, status: { type: "active", activeFlags: [] }, turns: [],
+      preview: "CANARY_PROMPT", cwd: "/private/CANARY_PATH", items: [{ text: "CANARY_TRANSCRIPT" }]
+    } } });
+  });
+}
+`;
+  await writeFile(command, source, "utf8");
+  await chmod(command, 0o700);
+  return { binDir, marker };
+}
+
+function projection({ state = "available", sessions = [], error } = {}) {
+  return {
+    schemaVersion: 1,
+    provider: {
+      id: "codex",
+      displayName: "Codex",
+      state,
+      version: state === "unavailable" ? null : "1.2.3",
+      capabilities: {
+        recentObservation: state === "available",
+        explicitLiveStatus: state === "available",
+      },
+      ...(error ? { error } : {}),
+    },
+    observedAt: "2026-07-15T12:00:00.000Z",
+    sessions,
+  };
+}
+
+async function markerText(marker) {
+  try {
+    return await readFile(marker, "utf8");
+  } catch (error) {
+    if (error.code === "ENOENT") return "";
+    throw error;
+  }
+}
+
+test("local shell enforces the browser boundary and renders durable observation states", { timeout: 90000 }, async () => {
   const { scripts } = JSON.parse(await readFile("package.json", "utf8"));
   assert.match(scripts.dev, /--hostname 127\.0\.0\.1/);
   assert.match(scripts.start, /--hostname 127\.0\.0\.1/);
 
-  const port = await freePort();
-  const child = spawn(
-    process.execPath,
-    [require.resolve("next/dist/bin/next"), "dev", "--turbopack", "--hostname", "127.0.0.1", "--port", String(port)],
-    { stdio: "ignore" },
-  );
+  const dataDir = await mkdtemp(join(tmpdir(), "patchfleet-web-data-"));
+  const { binDir, marker } = await fakeCodex();
+  let server = await startNext(dataDir, binDir);
 
   try {
-    await waitForServer(port, child);
+    const initial = await fetch(server.port);
+    assert.equal(initial.statusCode, 200);
+    assert.match(initial.body, /Codex has not been observed/);
+    assert.match(initial.body, /method="post"/);
+    assert.match(initial.body, /action="\/api\/observe"/);
 
-    for (const host of ["localhost", `localhost:${port}`, "127.0.0.1", `127.0.0.1:${port}`]) {
-      const response = await fetch(port, host);
+    for (const host of ["localhost", `localhost:${server.port}`, "127.0.0.1", `127.0.0.1:${server.port}`]) {
+      const response = await fetch(server.port, { host });
       assert.equal(response.statusCode, 200, host);
       for (const [name, value] of Object.entries(requiredHeaders)) {
         assert.equal(response.headers[name], value, name);
       }
     }
-
     for (const host of ["example.com", "localhost.example.com", "localhost:abc", "127.0.0.1:65536"]) {
-      assert.equal((await fetch(port, host)).statusCode, 403, host);
+      assert.equal((await fetch(server.port, { host })).statusCode, 403, host);
     }
-    assert.ok((await fetch(port, null, false)).statusCode >= 400, "missing Host");
+    assert.ok((await fetch(server.port, { host: null, setHost: false })).statusCode >= 400, "missing Host");
+
+    const endpoint = { path: "/api/observe", method: "POST" };
+    assert.equal((await fetch(server.port, endpoint)).statusCode, 403, "missing Origin");
+    assert.equal((await fetch(server.port, {
+      ...endpoint,
+      headers: { origin: "http://example.com" },
+    })).statusCode, 403, "cross Origin");
+    assert.equal((await fetch(server.port, {
+      ...endpoint,
+      headers: { origin: `http://127.0.0.1:${server.port}`, "content-length": "1" },
+      body: "x",
+    })).statusCode, 403, "request body");
+    assert.equal(await markerText(marker), "");
+    assert.equal(await markerText(join(dataDir, "events.jsonl")), "");
+
+    const accepted = await fetch(server.port, {
+      ...endpoint,
+      headers: { origin: `http://127.0.0.1:${server.port}` },
+    });
+    assert.equal(accepted.statusCode, 303);
+    assert.equal(new URL(accepted.headers.location).origin, `http://127.0.0.1:${server.port}`);
+    assert.equal(new URL(accepted.headers.location).pathname, "/");
+    for (const [name, value] of Object.entries(requiredHeaders)) {
+      assert.equal(accepted.headers[name], value, name);
+    }
+    assert.equal(await markerText(marker), "start\nstop\n");
+    const stored = `${await readFile(join(dataDir, "events.jsonl"), "utf8")}${await readFile(join(dataDir, "observation.json"), "utf8")}`;
+    for (const canary of ["CANARY_PROMPT", "CANARY_TRANSCRIPT", "/private/CANARY_PATH"]) {
+      assert.equal(stored.includes(canary), false, canary);
+    }
+
+    const populated = await fetch(server.port);
+    assert.match(populated.body, /web-sess…n-id/);
+    assert.match(populated.body, />running</);
+    assert.match(populated.body, /remains available after restart/);
+
+    const cleanLog = await readFile(join(dataDir, "events.jsonl"), "utf8");
+    await writeFile(join(dataDir, "events.jsonl"), `not-json\n${cleanLog}`, "utf8");
+    assert.match((await fetch(server.port)).body, /Local storage needs attention/);
+    await writeFile(join(dataDir, "events.jsonl"), cleanLog, "utf8");
+
+    await writeFile(join(dataDir, "observation.json"), `${JSON.stringify(projection())}\n`, "utf8");
+    assert.match((await fetch(server.port)).body, /No recent interactive sessions were returned/);
+
+    await writeFile(join(dataDir, "observation.json"), `${JSON.stringify(projection({
+      state: "unavailable",
+      error: { code: "CODEX_NOT_FOUND", message: "Codex CLI is not installed or is not on PATH." },
+    }))}\n`, "utf8");
+    assert.match((await fetch(server.port)).body, /Codex CLI is not installed/);
+
+    await writeFile(join(dataDir, "observation.json"), `${JSON.stringify(projection({
+      state: "degraded",
+      error: { code: "CODEX_APP_SERVER_TIMEOUT", message: "Codex observation timed out." },
+    }))}\n`, "utf8");
+    assert.match((await fetch(server.port)).body, /Codex observation timed out/);
+
+    await writeFile(join(dataDir, "observation.json"), "broken", "utf8");
+    assert.match((await fetch(server.port)).body, /Local storage needs attention/);
+
+    const durable = projection({
+      sessions: [{
+        providerSessionId: "restart-session",
+        status: "unknown",
+        createdAt: "2026-07-15T11:00:00.000Z",
+        lastObservedAt: "2026-07-15T12:00:00.000Z",
+      }],
+    });
+    await writeFile(join(dataDir, "observation.json"), `${JSON.stringify(durable)}\n`, "utf8");
+    await stopNext(server.child);
+    server = await startNext(dataDir, binDir);
+    const recovered = await fetch(server.port);
+    assert.match(recovered.body, /restart-session/);
+    assert.match(recovered.body, /Live status not observed/);
+    assert.equal(await markerText(marker), "start\nstop\n", "restart must not run Codex");
   } finally {
-    if (child.exitCode === null) {
-      const exited = once(child, "exit");
-      child.kill("SIGTERM");
-      await exited;
-    }
+    await stopNext(server.child);
   }
 });

@@ -6,7 +6,7 @@
     "dev": "next dev --turbopack --hostname 127.0.0.1",
     "build": "next build --turbopack",
     "start": "next start --hostname 127.0.0.1",
-    "test": "node --test tests/local-shell.test.js"
+    "test": "node --test tests/*.test.*"
   },
   "dependencies": {
     "next": "15.5.19",
