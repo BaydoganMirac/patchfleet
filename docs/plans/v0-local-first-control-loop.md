@@ -4,7 +4,7 @@ Status: in progress
 
 Owner: Patchfleet coordinator
 
-Updated: 2026-07-15
+Updated: 2026-07-16
 
 ## Progress
 
@@ -14,7 +14,12 @@ rebuilds the local projection, and preserves `unknown` when cross-client live
 state is not explicit. Completed
 [Task card 0003](0003-provider-observation-conformance.md) adds the independently
 reviewed shared test-only conformance contract. Claude Code and Gemini CLI
-adapters remain pending.
+supported-surface discovery is complete. [Proposed ADR 0010](../decisions/0010-supported-provider-observation-surfaces.md),
+[Task card 0004](0004-provider-lifecycle-contract.md),
+[Task card 0005](0005-claude-code-agent-view-observation.md), and
+[Task card 0006](0006-gemini-cli-hook-observation.md) define a contract-first
+sequence: integration-owner bridge, then disjoint Claude and Gemini adapter
+proofs. All three await owner approval.
 
 ## Goal
 
@@ -131,10 +136,13 @@ account menus, remote toggles, or fake controls.
 When Codex passes:
 
 1. freeze the smallest conformance contract;
-2. implement Claude Code and Gemini CLI adapters in bounded parallel tasks;
-3. change the shared contract only through the integration owner and a recorded
-   decision;
-4. declare Phase 1 complete only when all three providers pass.
+2. discover only supported machine-readable provider surfaces;
+3. let the integration owner resolve proven contract differences through a
+   recorded decision;
+4. implement Claude Code and Gemini CLI proofs in bounded parallel tasks with
+   disjoint files;
+5. generalize production persistence and UI only after both proofs exist;
+6. declare Phase 1 complete only when all three providers pass end-to-end.
 
 ## Explicitly deferred
 

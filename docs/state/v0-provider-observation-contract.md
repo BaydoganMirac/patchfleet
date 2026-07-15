@@ -2,7 +2,7 @@
 
 Status: Done
 
-Last updated: 2026-07-15
+Last updated: 2026-07-16
 
 ## Summary
 
@@ -38,9 +38,9 @@ Independent review passed after one focused SemVer correction.
 
 ## Next up
 
-1. Inspect the supported machine-readable Claude Code and Gemini CLI surfaces.
-2. Draft disjoint Claude Code, Gemini CLI, and integration-owner task cards.
-3. Obtain owner approval before provider-parallel implementation starts.
+1. Obtain owner approval for proposed ADR 0010 and Task card 0004.
+2. Complete and independently review the provider lifecycle contract bridge.
+3. Run the disjoint Claude Code and Gemini CLI proof tasks in parallel.
 
 ## Blockers
 
@@ -48,14 +48,16 @@ Independent review passed after one focused SemVer correction.
 
 ## Open questions
 
-- Whether Claude Code or Gemini CLI lacks a required timestamp remains provider
-  discovery work; adapters must report a real conflict instead of inventing it.
+- None for the completed conformance freeze. Gemini's missing original creation
+  time and hook ingress are tracked by the follow-on lifecycle-contract state.
 
 ## Decisions applied
 
 - Freeze shared behavior as executable assertions, not a new production SDK.
 - Keep provider invocation and error catalogs provider-specific.
 - Preserve current Codex runtime and persisted schemas unchanged.
+- Route proven provider differences through the integration owner before
+  provider implementation.
 
 ## Session log
 
@@ -70,3 +72,9 @@ Independent review passed after one focused SemVer correction.
   zero and empty prerelease forms and rejected combined prerelease/build forms;
   the follow-up fix now covers all three cases.
 - Independent re-review passed with no remaining P0-P2 findings.
+
+### 2026-07-16
+
+- Completed Claude Code and Gemini CLI supported-surface discovery.
+- Proposed ADR 0010 and disjoint Task cards 0004-0006; follow-on work now lives
+  in provider-specific and lifecycle-contract state files.
