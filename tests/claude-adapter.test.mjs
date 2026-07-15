@@ -8,6 +8,7 @@ import { assertProviderObservation } from "./support/provider-observation-confor
 
 const NOW = new Date("2026-07-16T12:00:00.000Z");
 const TEST_TIMEOUT = 5_000;
+const NUMERIC_STARTED_AT = 1_784_196_000_000;
 const CLAUDE_PROVIDER = Object.freeze({ id: "claude", displayName: "Claude Code" });
 const CLAUDE_ERRORS = Object.freeze({
   CLAUDE_NOT_FOUND: "Claude Code CLI is not installed or is not on PATH.",
@@ -105,7 +106,7 @@ test("Agent View maps only documented lifecycle and strips native fields", async
     background("done", "done"),
     background("failed", "failed"),
     background("stopped", "stopped"),
-    background("blocked", "blocked"),
+    background("blocked", "blocked", NUMERIC_STARTED_AT),
     { sessionId: "running", status: "running", startedAt: "2026-07-16T09:00:00.000Z", prompt: CANARY },
     { sessionId: "waiting", status: "waiting", startedAt: "2026-07-16T09:00:00.000Z", summary: CANARY },
     { sessionId: "idle", status: "idle", startedAt: "2026-07-16T09:00:00.000Z", cwd: CANARY },
@@ -126,6 +127,7 @@ test("Agent View maps only documented lifecycle and strips native fields", async
     "session:waiting": "unknown",
   });
   assert(result.sessions.every((session) => !Object.hasOwn(session, "terminalAt")));
+  assert.equal(result.sessions.find((session) => session.providerSessionId === "job:blocked").createdAt, "2026-07-16T10:00:00.000Z");
   assert.equal(JSON.stringify(result).includes(CANARY), false);
   assert.equal(await readFile(marker, "utf8"), "agents --json --all\n");
 });
@@ -161,6 +163,12 @@ test("Agent View rejects malformed snapshots instead of inventing identity or li
     ["invalid id", [background("invalid id", "working")]],
     ["invalid timestamp", [background("job", "working", "not-a-time")]],
     ["noncanonical timestamp", [background("job", "working", "2026-07-16T10:00:00Z")]],
+    ["numeric string timestamp", [background("job", "working", String(NUMERIC_STARTED_AT))]],
+    ["seconds timestamp", [background("job", "working", 1_752_661_800)]],
+    ["fractional timestamp", [background("job", "working", NUMERIC_STARTED_AT + 0.5)]],
+    ["short millisecond timestamp", [background("job", "working", 999_999_999_999)]],
+    ["long millisecond timestamp", [background("job", "working", 10_000_000_000_000)]],
+    ["non-finite timestamp", [background("job", "working", Number.POSITIVE_INFINITY)]],
     ["missing state", [{ id: "job", startedAt: NOW.toISOString() }]],
     ["unsupported live status", [{ sessionId: "live", status: "done", startedAt: NOW.toISOString() }]],
     ["non-object entry", [null]],
