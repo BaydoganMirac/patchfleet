@@ -1,6 +1,6 @@
 # V0 Gemini CLI observation
 
-Status: Planned
+Status: In progress
 
 Last updated: 2026-07-16
 
@@ -25,18 +25,16 @@ separate owner-approved work.
 
 ## In progress
 
-- None. The task is approved and waiting for Task card 0004.
+- Task card 0006 Builder implementation.
 
 ## Next up
 
-1. Complete and review Task card 0004.
-2. Assign one Gemini adapter Builder to the three owned files.
-3. Review the pure decoder proof independently.
-4. Only then draft explicit hook setup and secure single-writer ingestion work.
+1. Complete the three-file Builder implementation.
+2. Review the pure decoder proof independently.
+3. Only then draft explicit hook setup and secure single-writer ingestion work.
 
 ## Blockers
 
-- Implementation depends on approved, completed Task card 0004.
 - Dashboard availability depends on later explicit setup and integration tasks.
 
 ## Open questions
@@ -56,3 +54,5 @@ separate owner-approved work.
 ### 2026-07-16
 
 - Completed official/source discovery and proposed the safe hook decoder proof.
+- Owner approved Task card 0006; Task card 0004 passed review and the Builder
+  implementation started.

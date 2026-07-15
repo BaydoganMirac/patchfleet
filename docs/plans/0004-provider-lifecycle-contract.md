@@ -1,6 +1,6 @@
 # Task card 0004: Provider lifecycle contract bridge
 
-Status: Approved
+Status: Completed
 
 Coordinator: Patchfleet coordinator
 
@@ -11,6 +11,10 @@ Reviewer: independent reviewer after the builder commit
 Updated: 2026-07-16
 
 Approved by owner: 2026-07-16
+
+Completed: 2026-07-16
+
+Independent review: Passed with no P0-P2 findings
 
 ## Objective
 

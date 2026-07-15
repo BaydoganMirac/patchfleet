@@ -1,6 +1,6 @@
 # V0 provider lifecycle contract
 
-Status: In review
+Status: Done
 
 Last updated: 2026-07-16
 
@@ -31,15 +31,16 @@ unchanged.
 - Added focused rejection coverage for malformed, oversized, missing, extra,
   incorrectly typed, and forbidden lifecycle-signal values.
 - Passed 27/27 full tests and the production build.
+- Independent review passed with no P0-P2 findings.
 
 ## In progress
 
-- Independent review of the Task card 0004 Builder commit.
+- None. Task card 0004 is complete.
 
 ## Next up
 
-1. Complete independent review of the Task card 0004 Builder commit.
-2. Start Claude and Gemini adapter proofs in parallel only after review passes.
+1. Start the approved Claude and Gemini adapter proofs in parallel.
+2. Keep both proofs out of production persistence until later integration work.
 
 ## Blockers
 
@@ -68,3 +69,4 @@ unchanged.
   production observation normalizer, store, runtime, or UI.
 - One initial full-suite run hit an existing timing-sensitive Codex fixture;
   the clean rerun passed all 27 tests.
+- Independent review passed with no P0-P2 findings; Task card 0004 completed.

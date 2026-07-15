@@ -1,6 +1,6 @@
 # V0 Claude Code observation
 
-Status: Planned
+Status: In progress
 
 Last updated: 2026-07-16
 
@@ -22,18 +22,16 @@ after Task card 0004 resolves the shared timestamp and lifecycle contract.
 
 ## In progress
 
-- None. The task is approved and waiting for Task card 0004.
+- Task card 0005 Builder implementation.
 
 ## Next up
 
-1. Complete and review Task card 0004.
-2. Assign one Claude adapter Builder to the three owned files.
-3. Produce a sanitized nonempty Agent View smoke.
-4. Start an independent Reviewer after the Builder commit.
+1. Complete the three-file Builder implementation.
+2. Produce a sanitized nonempty Agent View smoke.
+3. Start an independent Reviewer after the Builder commit.
 
 ## Blockers
 
-- Implementation depends on approved, completed Task card 0004.
 - A nonempty real snapshot is required before Task card 0005 can complete; the
   discovery snapshot was an empty array.
 
@@ -54,3 +52,5 @@ after Task card 0004 resolves the shared timestamp and lifecycle contract.
 
 - Completed official and installed-CLI discovery and proposed the bounded
   Agent View adapter proof.
+- Owner approved Task card 0005; Task card 0004 passed review and the Builder
+  implementation started.
