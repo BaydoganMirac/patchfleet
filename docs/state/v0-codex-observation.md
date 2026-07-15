@@ -1,15 +1,15 @@
 # V0 Codex observation
 
-Status: Review fixes complete; re-review pending
+Status: Done
 
 Last updated: 2026-07-15
 
 ## Summary
 
-Task card 0002 defines the first real provider vertical slice: supported Codex
-app-server observation, append-only local facts, a rebuildable projection, and
-an honest local dashboard. The approved Builder implementation is complete and
-ready for independent review.
+Task card 0002 delivered the first real provider vertical slice: supported
+Codex app-server observation, append-only local facts, a rebuildable projection,
+and an honest local dashboard. Independent review passed after two P2
+corrections.
 
 ## Done
 
@@ -36,16 +36,18 @@ ready for independent review.
 - Independent review found and the Builder fixed two fail-closed boundaries:
   `thread/read` now rejects a mismatched returned thread id, and terminal-event
   deduplication now preserves a real terminal state re-entry.
+- Independent re-review passed with no remaining P0-P2 findings.
 
 ## In progress
 
-- Independent re-review of the focused P2 fixes.
+- None. Task card 0002 is complete.
 
 ## Next up
 
-1. Run the independent Reviewer against the focused P2 fix commit.
-2. Address only concrete review findings.
-3. Freeze the proven observation contract before the next provider adapter.
+1. Freeze the smallest shared observation conformance contract proven by Codex.
+2. Draft disjoint Claude Code and Gemini CLI adapter task cards plus one
+   integration-owner task.
+3. Obtain owner approval before provider-parallel implementation starts.
 
 ## Blockers
 
@@ -79,3 +81,4 @@ ready for independent review.
 - Independent review reported two P2 findings; the Builder added exact
   request/response thread-id correlation and consecutive-state terminal
   deduplication regressions without widening the event schema.
+- Independent re-review passed with no remaining P0-P2 findings.

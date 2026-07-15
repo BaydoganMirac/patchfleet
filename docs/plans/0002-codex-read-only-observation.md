@@ -1,6 +1,6 @@
 # Task card 0002: Codex read-only observation vertical slice
 
-Status: Approved
+Status: Completed
 
 Coordinator: Patchfleet coordinator
 
@@ -11,6 +11,10 @@ Reviewer: independent reviewer after the builder commit
 Updated: 2026-07-15
 
 Approved by owner: 2026-07-15
+
+Completed: 2026-07-15
+
+Independent review: Passed after two P2 corrections
 
 ## Objective
 
@@ -32,7 +36,7 @@ reading. A sanitized local probe confirmed that the installed CLI exposes
 A fresh app-server process reports persisted sessions as `notLoaded`; it does
 not prove that work running in another Codex client is live. Patchfleet must not
 turn recency, `idle`, or `notLoaded` into a fake running or completed state.
-[Proposed ADR 0009](../decisions/0009-codex-observation-uses-supported-app-server-metadata.md)
+[ADR 0009](../decisions/0009-codex-observation-uses-supported-app-server-metadata.md)
 records this boundary.
 
 ## Observable outcome
@@ -77,7 +81,7 @@ must not change this task card, an ADR, a shared protocol, or the roadmap.
 - `docs/product.md`;
 - `docs/architecture.md`;
 - `docs/plans/v0-local-first-control-loop.md`;
-- ADRs 0002, 0004, 0005, 0008, and proposed ADR 0009;
+- ADRs 0002, 0004, 0005, 0008, and ADR 0009;
 - `.agents/skills/provider-adapters/SKILL.md`;
 - `.agents/skills/local-runtime-state/SKILL.md`;
 - [official Codex app-server manual](https://learn.chatgpt.com/docs/app-server.md).

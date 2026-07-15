@@ -1,10 +1,18 @@
 # V0 local-first control loop
 
-Status: proposed for implementation
+Status: in progress
 
-Owner: unassigned
+Owner: Patchfleet coordinator
 
-Updated: 2026-07-13
+Updated: 2026-07-15
+
+## Progress
+
+The Codex read-only reference slice is implemented and independently reviewed.
+It probes the supported app-server protocol, persists sanitized lifecycle facts,
+rebuilds the local projection, and preserves `unknown` when cross-client live
+state is not explicit. The shared conformance contract, Claude adapter, and
+Gemini adapter remain pending.
 
 ## Goal
 
