@@ -1,6 +1,6 @@
 # ADR 0009: Codex observation uses supported app-server metadata
 
-Status: Proposed — owner approval required
+Status: Accepted
 
 Date: 2026-07-15
 
@@ -25,7 +25,7 @@ currently live. Recency is not execution state.
 3. Use supported app-server metadata and expose unknown where live state is not
    explicit: proposed as the smallest honest boundary.
 
-## Proposed decision
+## Decision
 
 Patchfleet uses `codex app-server` over stdio JSONL for Codex probe and
 read-only observation. It initializes without experimental API opt-in and uses

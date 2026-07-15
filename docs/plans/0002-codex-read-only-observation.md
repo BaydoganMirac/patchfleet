@@ -1,6 +1,6 @@
 # Task card 0002: Codex read-only observation vertical slice
 
-Status: Proposed — owner approval required
+Status: Approved
 
 Coordinator: Patchfleet coordinator
 
@@ -9,6 +9,8 @@ Builder: one implementation owner after approval
 Reviewer: independent reviewer after the builder commit
 
 Updated: 2026-07-15
+
+Approved by owner: 2026-07-15
 
 ## Objective
 

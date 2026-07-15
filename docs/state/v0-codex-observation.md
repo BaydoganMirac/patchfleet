@@ -1,14 +1,14 @@
 # V0 Codex observation
 
-Status: Proposed
+Status: In progress
 
 Last updated: 2026-07-15
 
 ## Summary
 
-Task card 0002 proposes the first real provider vertical slice: supported Codex
+Task card 0002 defines the first real provider vertical slice: supported Codex
 app-server observation, append-only local facts, a rebuildable projection, and
-an honest local dashboard. No provider runtime code has started.
+an honest local dashboard. The owner approved implementation.
 
 ## Done
 
@@ -21,21 +21,21 @@ an honest local dashboard. No provider runtime code has started.
   live detection is explicitly not claimed.
 - [Task card 0002](../plans/0002-codex-read-only-observation.md) drafted.
 - [ADR 0009](../decisions/0009-codex-observation-uses-supported-app-server-metadata.md)
-  proposed for the honest lifecycle boundary.
+  accepted for the honest lifecycle boundary.
 
 ## In progress
 
-- Owner review of Task card 0002 and proposed ADR 0009.
+- Builder implementation of the approved Task card 0002 slice.
 
 ## Next up
 
-1. Approve or revise Task card 0002 and ADR 0009.
-2. Record the approval before product code starts.
-3. Run the Builder and independent Reviewer workflow.
+1. Complete the bounded Builder implementation and local commit.
+2. Run the independent Reviewer against that stable commit.
+3. Address only concrete review findings.
 
 ## Blockers
 
-- Explicit owner approval is required before implementation.
+- None.
 
 ## Open questions
 
@@ -58,3 +58,4 @@ an honest local dashboard. No provider runtime code has started.
 
 - Completed provider-surface discovery and drafted the approval-gated first
   Codex observation slice.
+- Owner approved Task card 0002 and ADR 0009; Builder implementation started.
