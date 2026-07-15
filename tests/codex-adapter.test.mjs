@@ -70,6 +70,7 @@ if (process.argv.includes("--version")) {
     if (message.method === "thread/read") {
       if (!message.params.includeTurns) return send({ id: message.id, error: {} });
       if (mode === "malformed-read") return send({ id: message.id, result: { thread: null } });
+      if (mode === "mismatched-read-id") return send({ id: message.id, result: { thread: { ...threads[0], id: "other-valid-id" } } });
       return send({ id: message.id, result: { thread: threads.find((thread) => thread.id === message.params.threadId) } });
     }
   });
@@ -131,6 +132,7 @@ test("app-server failures degrade safely and always clean up the child", async (
     ["list-error", "CODEX_PROTOCOL_METHOD_ERROR"],
     ["malformed-list", "CODEX_PROTOCOL_MALFORMED"],
     ["malformed-read", "CODEX_PROTOCOL_MALFORMED"],
+    ["mismatched-read-id", "CODEX_PROTOCOL_MALFORMED"],
   ]) {
     await t.test(mode, async () => {
       const { command, marker } = await fakeCodex(mode);

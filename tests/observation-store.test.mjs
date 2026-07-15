@@ -15,6 +15,8 @@ import {
 
 const FIRST = "2026-07-15T12:00:00.000Z";
 const SECOND = "2026-07-15T12:05:00.000Z";
+const THIRD = "2026-07-15T12:10:00.000Z";
+const FOURTH = "2026-07-15T12:15:00.000Z";
 
 function observation({
   observedAt = FIRST,
@@ -102,13 +104,22 @@ test("middle corruption fails closed", async () => {
   await assert.rejects(() => persistObservation(observation({ observedAt: SECOND }), { dataDir }), StorageCorruptionError);
 });
 
-test("repeated observation does not duplicate a terminal transition", async () => {
+test("only consecutive identical terminal observations are deduplicated", async () => {
   const dataDir = await directory();
   await persistObservation(observation(), { dataDir });
   await persistObservation(observation({ observedAt: SECOND }), { dataDir });
+  assert.equal(
+    (await replayEvents({ dataDir })).filter((event) => event.type === "session.terminal").length,
+    1,
+  );
+
+  await persistObservation(observation({ observedAt: THIRD, status: "running", terminalAt: null }), {
+    dataDir,
+  });
+  await persistObservation(observation({ observedAt: FOURTH }), { dataDir });
   const events = await replayEvents({ dataDir });
-  assert.equal(events.filter((event) => event.type === "session.terminal").length, 1);
-  assert.equal(events.filter((event) => event.type === "session.observed").length, 2);
+  assert.equal(events.filter((event) => event.type === "session.terminal").length, 2);
+  assert.equal(events.filter((event) => event.type === "session.observed").length, 4);
 });
 
 test("forbidden extra fields never enter the event log or projection", async () => {

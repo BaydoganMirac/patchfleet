@@ -1,6 +1,6 @@
 # V0 Codex observation
 
-Status: Builder complete; review pending
+Status: Review fixes complete; re-review pending
 
 Last updated: 2026-07-15
 
@@ -33,14 +33,17 @@ ready for independent review.
   checks without changing dependencies or the lockfile.
 - A sanitized real Codex smoke detected the installed version, observed 20
   recent sessions, and persisted no forbidden field or absolute path.
+- Independent review found and the Builder fixed two fail-closed boundaries:
+  `thread/read` now rejects a mismatched returned thread id, and terminal-event
+  deduplication now preserves a real terminal state re-entry.
 
 ## In progress
 
-- Independent review of the stable Builder commit.
+- Independent re-review of the focused P2 fixes.
 
 ## Next up
 
-1. Run the independent Reviewer against the stable Builder commit.
+1. Run the independent Reviewer against the focused P2 fix commit.
 2. Address only concrete review findings.
 3. Freeze the proven observation contract before the next provider adapter.
 
@@ -73,3 +76,6 @@ ready for independent review.
 - Builder completed the supported read-only observation, durable projection,
   local dashboard, request boundary, recovery checks, production smoke, and a
   sanitized real-provider smoke without adding dependencies.
+- Independent review reported two P2 findings; the Builder added exact
+  request/response thread-id correlation and consecutive-state terminal
+  deduplication regressions without widening the event schema.
