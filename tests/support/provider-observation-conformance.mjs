@@ -79,7 +79,7 @@ export function assertProviderObservation(observation, expectedProvider, allowed
     assert(!ids.has(session.providerSessionId), "duplicate provider session id");
     ids.add(session.providerSessionId);
     assert(SESSION_STATES.has(session.status), "invalid session state");
-    timestamp(session.createdAt, "createdAt");
+    if (session.createdAt !== null) timestamp(session.createdAt, "createdAt");
     timestamp(session.lastObservedAt, "lastObservedAt");
     if (Object.hasOwn(session, "terminalAt")) {
       assert(TERMINAL_STATES.has(session.status), "terminalAt requires a terminal session");

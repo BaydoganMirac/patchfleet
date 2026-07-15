@@ -1,6 +1,6 @@
 # V0 provider lifecycle contract
 
-Status: In progress
+Status: In review
 
 Last updated: 2026-07-16
 
@@ -23,16 +23,23 @@ unchanged.
 - Recorded [ADR 0010](../decisions/0010-supported-provider-observation-surfaces.md).
 - Drafted [Task card 0004](../plans/0004-provider-lifecycle-contract.md).
 - Owner approved ADR 0010 and Task cards 0004-0006.
+- Added a strict five-field lifecycle-signal validator for the three known
+  providers and existing normalized lifecycle states.
+- Extended provider observation conformance so required `createdAt` accepts a
+  canonical ISO timestamp or `null` without changing production normalization
+  or persistence.
+- Added focused rejection coverage for malformed, oversized, missing, extra,
+  incorrectly typed, and forbidden lifecycle-signal values.
+- Passed 27/27 full tests and the production build.
 
 ## In progress
 
-- Task card 0004 Builder implementation.
+- Independent review of the Task card 0004 Builder commit.
 
 ## Next up
 
-1. Complete the five-file Builder implementation.
-2. Start an independent Reviewer after the Builder commit.
-3. Start Claude and Gemini adapter proofs in parallel only after review passes.
+1. Complete independent review of the Task card 0004 Builder commit.
+2. Start Claude and Gemini adapter proofs in parallel only after review passes.
 
 ## Blockers
 
@@ -57,3 +64,7 @@ unchanged.
 - Completed supported-surface discovery and proposed the integration-owner
   contract bridge for owner approval.
 - Owner approved ADR 0010 and Task cards 0004-0006; Task card 0004 started.
+- Completed the bounded five-file Builder implementation without changing the
+  production observation normalizer, store, runtime, or UI.
+- One initial full-suite run hit an existing timing-sensitive Codex fixture;
+  the clean rerun passed all 27 tests.

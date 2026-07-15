@@ -24,6 +24,9 @@ const valid = {
 
 test("provider observation conformance accepts the minimum valid shape", () => {
   assert.doesNotThrow(() => assertProviderObservation(valid, PROVIDER, ERRORS));
+  const withoutProviderCreationTime = structuredClone(valid);
+  withoutProviderCreationTime.sessions[0].createdAt = null;
+  assert.doesNotThrow(() => assertProviderObservation(withoutProviderCreationTime, PROVIDER, ERRORS));
   const prerelease = structuredClone(valid);
   prerelease.provider.version = "1.2.3-alpha+001";
   assert.doesNotThrow(() => assertProviderObservation(prerelease, PROVIDER, ERRORS));
@@ -39,6 +42,11 @@ test("provider observation conformance rejects unsafe normalized output", () => 
     ["duplicate session id", (value) => { value.sessions.push(structuredClone(value.sessions[0])); }],
     ["invalid lifecycle", (value) => { value.sessions[0].status = "paused"; }],
     ["invalid timestamp", (value) => { value.observedAt = "not-a-timestamp"; }],
+    ["missing creation timestamp", (value) => { delete value.sessions[0].createdAt; }],
+    ["undefined creation timestamp", (value) => { value.sessions[0].createdAt = undefined; }],
+    ["malformed creation timestamp", (value) => { value.sessions[0].createdAt = "not-a-timestamp"; }],
+    ["noncanonical creation timestamp", (value) => { value.sessions[0].createdAt = "2026-07-15T11:00:00Z"; }],
+    ["extra creation timestamp", (value) => { value.sessions[0].startedAt = "2026-07-15T11:00:00.000Z"; }],
     ["leading zero version", (value) => { value.provider.version = "01.2.3"; }],
     ["empty prerelease identifier", (value) => { value.provider.version = "1.2.3-."; }],
     ["terminal timestamp on running session", (value) => {
