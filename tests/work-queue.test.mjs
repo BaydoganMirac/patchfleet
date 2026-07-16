@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { appendFile, mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { appendFile, mkdtemp, readFile, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -16,7 +16,6 @@ import {
   applyWorkCommand,
   IdempotencyConflictError,
   readWorkProjection,
-  rebuildWorkProjection,
 } from "../lib/runtime/work-queue.mjs";
 
 const FIRST = "2026-07-16T12:00:00.000Z";
@@ -146,6 +145,40 @@ test("remove enforces item revision and records safe terminal outcomes", async (
   const projection = await readWorkProjection({ dataDir });
   assert.deepEqual(projection.items, []);
   assert.equal(projection.receipts.length, 4);
+
+  const reused = enqueue({
+    intentId: "intent-reused-work-id",
+    idempotencyKey: "key-reused-work-id",
+    createdAt: THIRD,
+  });
+  const rejected = await applyWorkCommand(reused, { dataDir, now: () => THIRD });
+  assert.deepEqual([rejected.outcome, rejected.reasonCode], ["rejected", "WORK_ITEM_EXISTS"]);
+  assert.equal(
+    (await replayEvents({ dataDir })).filter((item) => item.type === "work.enqueued").length,
+    1,
+  );
+
+  const duplicateIdentity = validateCommandIntent({
+    ...reused,
+    intentId: "intent-corrupt-reuse",
+    idempotencyKey: "key-corrupt-reuse",
+  });
+  await assert.rejects(() => appendEvents([
+    {
+      id: randomUUID(),
+      schemaVersion: 1,
+      type: "command.requested",
+      recordedAt: THIRD,
+      payload: { intent: duplicateIdentity },
+    },
+    {
+      id: randomUUID(),
+      schemaVersion: 1,
+      type: "work.enqueued",
+      recordedAt: THIRD,
+      payload: { intentId: duplicateIdentity.intentId, workItem: duplicateIdentity.payload.workItem },
+    },
+  ], { dataDir }), StorageCorruptionError);
 });
 
 test("expired and duplicate commands produce one semantic receipt and no repeated fact", async () => {
@@ -206,9 +239,33 @@ test("a durable pending request can finish after restart without a second reques
   assert.equal(events.filter((item) => item.type === "work.enqueued").length, 1);
 });
 
+test("a pending request expires terminally and terminal duplicates return its first receipt", async () => {
+  const dataDir = await directory();
+  const intent = validateCommandIntent(enqueue({ expiresAt: SECOND }));
+  await appendEvents([{
+    id: randomUUID(),
+    schemaVersion: 1,
+    type: "command.requested",
+    recordedAt: FIRST,
+    payload: { intent },
+  }], { dataDir });
+
+  const expired = await applyWorkCommand(intent, { dataDir, now: () => SECOND });
+  assert.deepEqual([expired.outcome, expired.reasonCode], ["expired", "COMMAND_EXPIRED"]);
+  assert.deepEqual(
+    await applyWorkCommand(intent, { dataDir, now: () => THIRD }),
+    expired,
+  );
+  const events = await replayEvents({ dataDir });
+  assert.equal(events.filter((item) => item.type === "command.requested").length, 1);
+  assert.equal(events.filter((item) => item.type === "command.receipted").length, 1);
+  assert.equal(events.some((item) => item.type === "work.enqueued"), false);
+});
+
 test("replay repairs a crash tail, rebuilds projection, and rejects middle corruption", async () => {
   const dataDir = await directory();
   await applyWorkCommand(enqueue(), { dataDir, now: () => FIRST });
+  const stale = await readFile(join(dataDir, "work-items.json"), "utf8");
   await appendFile(join(dataDir, "events.jsonl"), '{"partial":', "utf8");
   await applyWorkCommand(enqueue({
     intentId: "intent-enqueue-2",
@@ -218,14 +275,31 @@ test("replay repairs a crash tail, rebuilds projection, and rejects middle corru
   }), { dataDir, now: () => SECOND });
   assert.equal((await readFile(join(dataDir, "events.jsonl"), "utf8")).includes('"partial"'), false);
 
+  await writeFile(join(dataDir, "work-items.json"), stale, "utf8");
+  const recovered = await readWorkProjection({ dataDir });
+  assert.deepEqual(recovered.items.map((item) => item.workItemId), ["work-1", "work-2"]);
+  assert.deepEqual(JSON.parse(await readFile(join(dataDir, "work-items.json"), "utf8")), recovered);
+
+  await unlink(join(dataDir, "work-items.json"));
+  assert.deepEqual(await readWorkProjection({ dataDir }), recovered);
   await writeFile(join(dataDir, "work-items.json"), "broken", "utf8");
-  const rebuilt = await rebuildWorkProjection({ dataDir });
-  assert.deepEqual(await readWorkProjection({ dataDir }), rebuilt);
+  assert.deepEqual(await readWorkProjection({ dataDir }), recovered);
 
   const log = await readFile(join(dataDir, "events.jsonl"), "utf8");
   const lines = log.trimEnd().split("\n");
   lines.splice(1, 0, "not-json");
   await writeFile(join(dataDir, "events.jsonl"), `${lines.join("\n")}\n`, "utf8");
+  await assert.rejects(() => readWorkProjection({ dataDir }), StorageCorruptionError);
+});
+
+test("receipt reason corruption fails closed before projection recovery", async () => {
+  const dataDir = await directory();
+  await applyWorkCommand(enqueue(), { dataDir, now: () => FIRST });
+  const path = join(dataDir, "events.jsonl");
+  const log = await readFile(path, "utf8");
+  const corrupted = log.replace('"reasonCode":"WORK_ENQUEUED"', '"reasonCode":"WORK_REMOVED"');
+  assert.notEqual(corrupted, log);
+  await writeFile(path, corrupted, "utf8");
   await assert.rejects(() => readWorkProjection({ dataDir }), StorageCorruptionError);
 });
 

@@ -24,6 +24,10 @@ Last updated: 2026-07-16
 - Covered restart replay, pending-request recovery, crash-tail repair,
   corruption failure, stale and expired commands, concurrent duplicate
   delivery, idempotency conflict, shared-log isolation, and privacy canaries.
+- Closed Task 0009 review findings: pending requests expire without a work
+  fact, work-item identities cannot be reused after removal, receipt reasons
+  are bound to command replay semantics, and missing, stale, or corrupt work
+  projections self-heal from the valid canonical log.
 
 ## In progress
 
