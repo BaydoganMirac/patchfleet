@@ -1,6 +1,6 @@
 # V0 Gemini lifecycle ingress
 
-Status: Builder complete; review pending
+Status: Builder follow-up complete; re-review pending
 
 Last updated: 2026-07-16
 
@@ -32,9 +32,12 @@ extension or user setting has been changed.
 - Drained valid signals during manual refresh through the existing serialized
   event writer with runtime revalidation, exact-signal idempotency, durable
   cleanup, nullable creation time, and deterministic 20-session retention.
-- Preserved current Gemini hook sessions only while the extension is active;
-  missing setup clears current Gemini sessions without changing Codex, Claude,
-  or immutable event history.
+- Preserved current Gemini hook sessions while the extension is active or its
+  status probe fails transiently; verified missing/inactive setup and true CLI
+  unavailability clear them without changing Codex, Claude, or immutable event
+  history.
+- Kept retained session IDs in the provider projection without rewriting old
+  `session.observed` facts on every active refresh.
 - Proved `AfterAgent` never creates `session.terminal` or `terminalAt`.
 - Documented native link, restart, status, and uninstall steps without changing
   any real Gemini extension or user setting.
@@ -44,13 +47,12 @@ extension or user setting has been changed.
 
 ## In progress
 
-- Independent review of the stable Builder commit.
+- Independent re-review of the focused Builder follow-up.
 
 ## Next up
 
-1. Start the independent Reviewer after the Builder commit exists.
-2. Resolve any P0-P2 review finding in a focused follow-up commit.
-3. Let the owner perform the first real extension link/uninstall smoke after
+1. Re-run the independent Reviewer against the Builder and follow-up commits.
+2. Let the owner perform the first real extension link/uninstall smoke after
    reviewed code exists.
 
 ## Blockers
@@ -83,3 +85,6 @@ extension or user setting has been changed.
   persistence, retention, setup-clearing, documentation, and focused checks.
 - No real extension lifecycle command ran and no Gemini settings file was read
   or changed.
+- Review follow-up preserved sessions across transient probe failures while
+  keeping setup-required and unavailable clearing honest, and stopped active
+  refreshes from appending duplicate session facts.

@@ -303,16 +303,40 @@ test("Gemini lifecycle signals are idempotent, non-terminal, retained, and setup
   assert.equal(provider(projection, "gemini").sessions.some((item) => item.providerSessionId === "retained-20"), true);
   assert.equal(provider(projection, "gemini").sessions.some((item) => item.providerSessionId === "gemini-hook-session"), false);
 
+  const sessionEventsBeforeRefresh = (await replayEvents({ dataDir })).filter(
+    (item) => item.type === "session.observed" && item.payload.providerId === "gemini",
+  ).length;
   projection = await persistObservation(observation({
     providerId: "gemini",
     observedAt: new Date(Date.parse(FOURTH) + 30_000).toISOString(),
     sessions: [],
   }), { dataDir, preserveSessions: true });
   assert.equal(provider(projection, "gemini").sessions.length, 20);
+  assert.equal(
+    (await replayEvents({ dataDir })).filter(
+      (item) => item.type === "session.observed" && item.payload.providerId === "gemini",
+    ).length,
+    sessionEventsBeforeRefresh,
+  );
 
   projection = await persistObservation(observation({
     providerId: "gemini",
     observedAt: new Date(Date.parse(FOURTH) + 31_000).toISOString(),
+    state: "degraded",
+    error: safeObservationError("gemini", "GEMINI_PROBE_FAILED"),
+    sessions: [],
+  }), { dataDir, preserveSessions: true });
+  assert.equal(provider(projection, "gemini").sessions.length, 20);
+  assert.equal(
+    (await replayEvents({ dataDir })).filter(
+      (item) => item.type === "session.observed" && item.payload.providerId === "gemini",
+    ).length,
+    sessionEventsBeforeRefresh,
+  );
+
+  projection = await persistObservation(observation({
+    providerId: "gemini",
+    observedAt: new Date(Date.parse(FOURTH) + 32_000).toISOString(),
     state: "degraded",
     error: safeObservationError("gemini", "GEMINI_HOOK_SETUP_REQUIRED"),
     sessions: [],

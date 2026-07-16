@@ -103,6 +103,7 @@ async function fakeProviders() {
   const codex = join(binDir, "codex");
   const claude = join(binDir, "claude");
   const gemini = join(binDir, "gemini");
+  const geminiMode = join(binDir, "gemini-mode");
   const marker = join(binDir, "marker");
   const codexSource = `#!/usr/bin/env node
 const fs = require("node:fs");
@@ -133,8 +134,15 @@ else console.log(JSON.stringify([{
 }]));
 `;
   const geminiSource = `#!/usr/bin/env node
+const fs = require("node:fs");
 if (process.argv.includes("--version")) console.log("0.43.0");
-else if (process.argv[2] === "extensions") console.log("[]");
+else if (process.argv[2] === "extensions") {
+  const mode = fs.existsSync(${JSON.stringify(geminiMode)})
+    ? fs.readFileSync(${JSON.stringify(geminiMode)}, "utf8").trim()
+    : "missing";
+  if (mode === "failed") process.exit(1);
+  else console.log("[]");
+}
 else process.exit(1);
 `;
   await writeFile(codex, codexSource, "utf8");
@@ -143,7 +151,7 @@ else process.exit(1);
   await chmod(codex, 0o700);
   await chmod(claude, 0o700);
   await chmod(gemini, 0o700);
-  return { binDir, marker };
+  return { binDir, geminiMode, marker };
 }
 
 function projection({ state = "available", sessions = [], error } = {}) {
@@ -180,7 +188,7 @@ test("local shell enforces the browser boundary and renders durable observation 
   assert.match(scripts.start, /--hostname 127\.0\.0\.1/);
 
   const dataDir = await mkdtemp(join(tmpdir(), "patchfleet-web-data-"));
-  const { binDir, marker } = await fakeProviders();
+  const { binDir, geminiMode, marker } = await fakeProviders();
   let server = await startNext(dataDir, binDir);
 
   try {
@@ -247,6 +255,47 @@ test("local shell enforces the browser boundary and renders durable observation 
     assert.match(populated.body, />running</);
     assert.match(populated.body, /remains available after restart/);
 
+    const { persistGeminiLifecycleSignal, persistObservation } = await import(
+      "../lib/runtime/observation-store.mjs"
+    );
+    await persistObservation({
+      schemaVersion: 1,
+      provider: {
+        id: "gemini",
+        displayName: "Gemini CLI",
+        state: "available",
+        version: "0.43.0",
+        capabilities: { recentObservation: true, explicitLiveStatus: true },
+      },
+      observedAt: "2026-07-16T12:00:00.000Z",
+      sessions: [],
+    }, { dataDir });
+    await persistGeminiLifecycleSignal({
+      schemaVersion: 1,
+      providerId: "gemini",
+      providerSessionId: "gemini-review-session",
+      status: "running",
+      observedAt: "2026-07-16T12:01:00.000Z",
+    }, { dataDir });
+
+    await writeFile(geminiMode, "failed", "utf8");
+    assert.equal((await fetch(server.port, {
+      ...endpoint,
+      headers: { origin: `http://127.0.0.1:${server.port}` },
+    })).statusCode, 303);
+    const transient = await fetch(server.port);
+    assert.match(transient.body, /Gemini CLI could not be checked/);
+    assert.match(transient.body, /gemini-r…sion/);
+
+    await writeFile(geminiMode, "missing", "utf8");
+    assert.equal((await fetch(server.port, {
+      ...endpoint,
+      headers: { origin: `http://127.0.0.1:${server.port}` },
+    })).statusCode, 303);
+    const setupMissing = await fetch(server.port);
+    assert.match(setupMissing.body, /Gemini CLI hook setup is required/);
+    assert.doesNotMatch(setupMissing.body, /gemini-r…sion/);
+
     const cleanLog = await readFile(join(dataDir, "events.jsonl"), "utf8");
     await writeFile(join(dataDir, "events.jsonl"), `not-json\n${cleanLog}`, "utf8");
     assert.match((await fetch(server.port)).body, /Local storage needs attention/);
@@ -279,12 +328,13 @@ test("local shell enforces the browser boundary and renders durable observation 
       }],
     });
     await writeFile(join(dataDir, "observation.json"), `${JSON.stringify(durable)}\n`, "utf8");
+    const markerBeforeRestart = await markerText(marker);
     await stopNext(server.child);
     server = await startNext(dataDir, binDir);
     const recovered = await fetch(server.port);
     assert.match(recovered.body, /restart-session/);
     assert.match(recovered.body, /Live status not observed/);
-    assert.equal(await markerText(marker), "start\nstop\n", "restart must not run Codex");
+    assert.equal(await markerText(marker), markerBeforeRestart, "restart must not run Codex");
   } finally {
     await stopNext(server.child);
   }
