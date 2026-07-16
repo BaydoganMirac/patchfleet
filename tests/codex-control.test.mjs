@@ -5,8 +5,10 @@ import { homedir, tmpdir } from "node:os";
 import { join, parse } from "node:path";
 import { test } from "node:test";
 import {
+  cancelCodexRun,
   closeCodexControl,
   prepareCodexWork,
+  startCodexWork,
   validateCodexWorkspace,
 } from "../lib/providers/codex-control.mjs";
 import {
@@ -186,6 +188,26 @@ function launchingFacts(ownerEpoch) {
       ownerEpoch,
     }),
   ];
+}
+
+function terminalObservation(status) {
+  return {
+    provider: {
+      id: "codex",
+      displayName: "Codex",
+      state: "available",
+      version: "1.2.3",
+      capabilities: { recentObservation: true, explicitLiveStatus: true },
+    },
+    observedAt: THIRD,
+    sessions: [{
+      providerSessionId: "thread-1",
+      status,
+      createdAt: FIRST,
+      lastObservedAt: THIRD,
+      terminalAt: THIRD,
+    }],
+  };
 }
 
 test("start uses one bounded app-server, rejects server requests, and persists only safe run ids", async () => {
@@ -452,6 +474,270 @@ test("same-owner cancel interrupts once and duplicate delivery returns the recei
   } finally {
     await closeCodexControl();
   }
+});
+
+test("a concurrent interrupted observation preserves one applied cancel fact without another revision", async () => {
+  const dataDir = await mkdtemp(join(tmpdir(), "patchfleet-control-data-"));
+  const cwd = await workspace();
+  const fake = await fixture();
+  try {
+    await applyWorkCommand(enqueue(cwd), { dataDir, now: () => FIRST });
+    await applyWorkControlCommand(start(), {
+      dataDir, command: fake.command, now: () => SECOND, timeoutMs: 500,
+    });
+    const applied = await applyWorkControlCommand(cancel(), {
+      dataDir,
+      command: fake.command,
+      now: () => THIRD,
+      timeoutMs: 500,
+      cancel: async (options) => {
+        await cancelCodexRun(options);
+        await persistObservation(terminalObservation("interrupted"), { dataDir });
+      },
+    });
+    assert.deepEqual([applied.outcome, applied.reasonCode], ["applied", "RUN_CANCELLED"]);
+    const projection = await readWorkProjection({ dataDir });
+    assert.deepEqual(
+      [projection.revision, applied.workProjectionRevision, projection.items[0].status, projection.runs[0].status],
+      [3, 3, "interrupted", "interrupted"],
+    );
+    const events = (await readFile(join(dataDir, "events.jsonl"), "utf8")).trim().split("\n").map(JSON.parse);
+    assert.equal(events.filter((item) =>
+      item.type === "run.interrupted" && item.payload.intentId === cancel().intentId).length, 1);
+    assert.equal((await fake.state()).interrupts, 1);
+  } finally {
+    await closeCodexControl();
+  }
+});
+
+test("a concurrent completed or failed observation does not claim the cancel applied", async (t) => {
+  for (const status of ["completed", "failed"]) {
+    await t.test(status, async () => {
+      const dataDir = await mkdtemp(join(tmpdir(), "patchfleet-control-data-"));
+      const cwd = await workspace();
+      const fake = await fixture();
+      try {
+        await applyWorkCommand(enqueue(cwd), { dataDir, now: () => FIRST });
+        await applyWorkControlCommand(start(), {
+          dataDir, command: fake.command, now: () => SECOND, timeoutMs: 500,
+        });
+        const failed = await applyWorkControlCommand(cancel(), {
+          dataDir,
+          command: fake.command,
+          now: () => THIRD,
+          timeoutMs: 500,
+          cancel: () => persistObservation(terminalObservation(status), { dataDir }),
+        });
+        assert.deepEqual([failed.outcome, failed.reasonCode], ["failed", "PROVIDER_CONTROL_FAILED"]);
+        const projection = await readWorkProjection({ dataDir });
+        assert.deepEqual(
+          [projection.revision, failed.workProjectionRevision, projection.runs[0].status],
+          [3, 3, status],
+        );
+        const events = (await readFile(join(dataDir, "events.jsonl"), "utf8")).trim().split("\n").map(JSON.parse);
+        assert.equal(events.some((item) =>
+          item.type === "run.interrupted" && item.payload.intentId === cancel().intentId), false);
+        assert.equal((await fake.state()).interrupts, 0);
+      } finally {
+        await closeCodexControl();
+      }
+    });
+  }
+});
+
+test("an uncertain cancel preserves RUN_SESSION_LOST when observation already failed the run", async () => {
+  const dataDir = await mkdtemp(join(tmpdir(), "patchfleet-control-data-"));
+  const cwd = await workspace();
+  const fake = await fixture();
+  try {
+    await applyWorkCommand(enqueue(cwd), { dataDir, now: () => FIRST });
+    await applyWorkControlCommand(start(), {
+      dataDir, command: fake.command, now: () => SECOND, timeoutMs: 500,
+    });
+    const failed = await applyWorkControlCommand(cancel(), {
+      dataDir,
+      command: fake.command,
+      now: () => THIRD,
+      timeoutMs: 500,
+      cancel: async () => {
+        await persistObservation(terminalObservation("failed"), { dataDir });
+        throw Object.assign(new Error("connection lost"), { outcomeUnknown: true });
+      },
+    });
+    assert.deepEqual([failed.outcome, failed.reasonCode], ["failed", "RUN_SESSION_LOST"]);
+    const projection = await readWorkProjection({ dataDir });
+    assert.deepEqual([projection.revision, projection.runs[0].status], [3, "failed"]);
+    const events = (await readFile(join(dataDir, "events.jsonl"), "utf8")).trim().split("\n").map(JSON.parse);
+    assert.equal(events.some((item) => item.type === "run.session_lost"), false);
+  } finally {
+    await closeCodexControl();
+  }
+});
+
+test("exact retry recovers terminal receipts from durable control facts", async (t) => {
+  await t.test("run.started", async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), "patchfleet-control-data-"));
+    const cwd = await workspace();
+    const fake = await fixture();
+    const ownerEpoch = "owner-started-fact";
+    try {
+      await applyWorkCommand(enqueue(cwd), { dataDir, now: () => FIRST });
+      await appendWorkFacts(dataDir, launchingFacts(ownerEpoch));
+      const prepared = await prepareCodexWork({
+        intentId: start().intentId,
+        workingDirectory: cwd,
+        command: fake.command,
+        timeoutMs: 500,
+      });
+      await appendWorkFacts(dataDir, [
+        workEvent("run.prepared", SECOND, {
+          intentId: start().intentId,
+          workItemId: start().payload.workItemId,
+          providerId: "codex",
+          providerSessionId: prepared.providerSessionId,
+          expectedItemRevision: start().payload.expectedItemRevision,
+          ownerEpoch,
+        }),
+        workEvent("turn.requested", SECOND, {
+          intentId: start().intentId,
+          providerSessionId: prepared.providerSessionId,
+          ownerEpoch,
+        }),
+      ]);
+      const started = await startCodexWork({
+        intentId: start().intentId,
+        instruction: INSTRUCTION_CANARY,
+        providerSessionId: prepared.providerSessionId,
+        workingDirectory: cwd,
+        command: fake.command,
+        timeoutMs: 500,
+      });
+      await appendWorkFacts(dataDir, [workEvent("run.started", SECOND, {
+        intentId: start().intentId,
+        expectedItemRevision: start().payload.expectedItemRevision,
+        ownerEpoch,
+        run: {
+          schemaVersion: 1,
+          runId: `run:${start().intentId}`,
+          workItemId: start().payload.workItemId,
+          providerId: "codex",
+          ownerEpoch,
+          providerSessionId: started.providerSessionId,
+          providerTurnId: started.providerTurnId,
+          status: started.status,
+          startedAt: SECOND,
+          terminalAt: started.terminalAt,
+          revision: 1,
+        },
+      })]);
+      const recovered = await applyWorkControlCommand(start(), {
+        dataDir, command: fake.command, now: () => THIRD, ownerEpoch, timeoutMs: 500,
+      });
+      assert.deepEqual([recovered.outcome, recovered.reasonCode], ["applied", "WORK_STARTED"]);
+      assert.deepEqual(
+        [(await fake.state()).threadStarts, (await fake.state()).turnStarts],
+        [1, 1],
+      );
+    } finally {
+      await closeCodexControl();
+    }
+  });
+
+  await t.test("run.start_unknown", async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), "patchfleet-control-data-"));
+    const cwd = await workspace();
+    const fake = await fixture();
+    const ownerEpoch = "owner-unknown-fact";
+    try {
+      await applyWorkCommand(enqueue(cwd), { dataDir, now: () => FIRST });
+      await appendWorkFacts(dataDir, [
+        ...launchingFacts(ownerEpoch),
+        workEvent("run.start_unknown", SECOND, {
+          intentId: start().intentId,
+          workItemId: start().payload.workItemId,
+          expectedItemRevision: start().payload.expectedItemRevision,
+          ownerEpoch,
+        }),
+      ]);
+      const recovered = await applyWorkControlCommand(start(), {
+        dataDir, command: fake.command, now: () => THIRD, ownerEpoch, timeoutMs: 500,
+      });
+      assert.deepEqual([recovered.outcome, recovered.reasonCode], ["failed", "START_OUTCOME_UNKNOWN"]);
+      assert.deepEqual(await fake.state(), { processes: 0, threadStarts: 0, turnStarts: 0 });
+    } finally {
+      await closeCodexControl();
+    }
+  });
+
+  await t.test("run.interrupted after a receipt crash tail", async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), "patchfleet-control-data-"));
+    const cwd = await workspace();
+    const fake = await fixture();
+    try {
+      await applyWorkCommand(enqueue(cwd), { dataDir, now: () => FIRST });
+      await applyWorkControlCommand(start(), {
+        dataDir, command: fake.command, now: () => SECOND, timeoutMs: 500,
+      });
+      const running = await readWorkProjection({ dataDir });
+      const run = running.runs[0];
+      await cancelCodexRun({
+        runId: run.runId,
+        providerSessionId: run.providerSessionId,
+        providerTurnId: run.providerTurnId,
+        workingDirectory: cwd,
+        command: fake.command,
+        timeoutMs: 500,
+      });
+      await appendWorkFacts(dataDir, [
+        workEvent("command.requested", THIRD, { intent: cancel() }),
+        workEvent("run.interrupted", THIRD, {
+          intentId: cancel().intentId,
+          runId: run.runId,
+          expectedRunRevision: run.revision,
+        }),
+      ]);
+      const logPath = join(dataDir, "events.jsonl");
+      await writeFile(logPath, `${await readFile(logPath, "utf8")}{"partial"`, "utf8");
+      const recovered = await applyWorkControlCommand(cancel(), {
+        dataDir, command: fake.command, now: () => THIRD, timeoutMs: 500,
+      });
+      assert.deepEqual([recovered.outcome, recovered.reasonCode], ["applied", "RUN_CANCELLED"]);
+      assert.equal((await fake.state()).interrupts, 1);
+      const events = (await readFile(logPath, "utf8")).trim().split("\n").map(JSON.parse);
+      assert.equal(events.filter((item) => item.type === "run.interrupted").length, 1);
+      assert.equal(events.filter((item) =>
+        item.type === "command.receipted" && item.payload.receipt.intentId === cancel().intentId).length, 1);
+    } finally {
+      await closeCodexControl();
+    }
+  });
+
+  await t.test("run.session_lost", async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), "patchfleet-control-data-"));
+    const cwd = await workspace();
+    const fake = await fixture();
+    const ownerEpoch = "owner-session-fact";
+    try {
+      await applyWorkCommand(enqueue(cwd), { dataDir, now: () => FIRST });
+      await applyWorkControlCommand(start(), {
+        dataDir, command: fake.command, now: () => SECOND, ownerEpoch, timeoutMs: 500,
+      });
+      await appendWorkFacts(dataDir, [
+        workEvent("command.requested", THIRD, { intent: cancel() }),
+        workEvent("run.session_lost", THIRD, {
+          runId: cancel().payload.runId,
+          ownerEpoch,
+        }),
+      ]);
+      const recovered = await applyWorkControlCommand(cancel(), {
+        dataDir, command: fake.command, now: () => THIRD, ownerEpoch, timeoutMs: 500,
+      });
+      assert.deepEqual([recovered.outcome, recovered.reasonCode], ["failed", "RUN_SESSION_LOST"]);
+      assert.equal((await fake.state()).interrupts, 0);
+    } finally {
+      await closeCodexControl();
+    }
+  });
 });
 
 test("an uncertain interrupt writes one terminal receipt and exact retry does not interrupt twice", async () => {
