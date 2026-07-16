@@ -1,6 +1,6 @@
 # V0 Gemini lifecycle ingress
 
-Status: Builder follow-up complete; re-review pending
+Status: Done
 
 Last updated: 2026-07-16
 
@@ -44,16 +44,15 @@ extension or user setting has been changed.
 - `npm test` passed: 83 tests, 0 failures.
 - `npm run build` passed.
 - `git diff --check` passed.
+- Independent re-review passed with no unresolved P0-P3 finding.
 
 ## In progress
 
-- Independent re-review of the focused Builder follow-up.
+- None.
 
 ## Next up
 
-1. Re-run the independent Reviewer against the Builder and follow-up commits.
-2. Let the owner perform the first real extension link/uninstall smoke after
-   reviewed code exists.
+1. Let the owner perform the first real extension link/status/uninstall smoke.
 
 ## Blockers
 
@@ -88,3 +87,5 @@ extension or user setting has been changed.
 - Review follow-up preserved sessions across transient probe failures while
   keeping setup-required and unavailable clearing honest, and stopped active
   refreshes from appending duplicate session facts.
+- Independent re-review passed after commits `ee69add` and `6e66bdd`; no P0-P3
+  finding remains.

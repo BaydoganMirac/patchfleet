@@ -1,6 +1,6 @@
 # Task card 0008: Gemini native extension lifecycle ingress
 
-Status: Approved
+Status: Completed
 
 Coordinator: Patchfleet coordinator
 
@@ -11,6 +11,10 @@ Reviewer: one independent reviewer after the builder commit
 Updated: 2026-07-16
 
 Approved by owner: 2026-07-16
+
+Completed: 2026-07-16
+
+Independent review: Passed after focused session-preservation follow-up
 
 Depends on: Task cards 0004, 0006, and 0007 completed and independently reviewed
 
