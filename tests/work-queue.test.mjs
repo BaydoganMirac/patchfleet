@@ -230,6 +230,7 @@ test("a durable pending request can finish after restart without a second reques
     schemaVersion: 1,
     revision: 0,
     items: [],
+    runs: [],
     receipts: [],
   });
   const receipt = await applyWorkCommand(intent, { dataDir, now: () => SECOND });

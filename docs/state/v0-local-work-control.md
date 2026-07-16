@@ -34,15 +34,45 @@ Last updated: 2026-07-16
 - Task 0009 independently re-reviewed clean with no unresolved P0-P3 finding.
 - Task 0009 exact-tree checks passed: 93 tests, production build, and diff
   check; commits `3f7f357`, `ad66a4c`, and `649f001` remain local only.
+- Implemented Task 0010 `start_work` and `cancel_run` with durable requested and
+  terminal receipt events, opaque Codex run links, restart replay, stale and
+  expiry validation, and fail-closed uncertain outcomes.
+- Added bounded Codex workspace preflight for a real Git worktree root and a
+  single long-lived app-server connection with `workspace-write`, approval
+  policy `never`, persistent threads, raw events disabled, rejected server
+  requests, and discarded notifications/native output.
+- Added an fsynced owner-epoch launch contract before every provider call.
+  `run.launching`, `run.prepared`, `turn.requested`, and `run.started` carry the
+  same opaque boot owner, while the event log stores no provider-native item.
+- Bounded real Codex 0.144.1 diagnostics proved that a new app-server rejects
+  resume for both an empty prepared thread and an active turn after the owning
+  app-server closes. Patchfleet therefore never attempts cross-process resume:
+  old pending launches become `START_OUTCOME_UNKNOWN`/blocked and old active
+  runs become session-lost/failed/blocked without a replacement start.
+- Added the dependency-free loopback Next.js launcher that supplies one random
+  owner epoch to all server workers for the lifetime of that local app boot.
+- Added one exact same-origin, loopback-only, size-bounded URL-encoded mutation
+  route with duplicate and extra field rejection.
+- Added the responsive, keyboard-usable local work console for enqueue, remove,
+  capability-aware start/cancel, durable run state, and safe receipt history.
+- Focused fail-closed control/runtime tests and local-shell restart tests pass,
+  including crashes before provider prepare, after provider prepare, after
+  turn request, uncertain turn start, old-owner active run, stale read-only GET,
+  manual Refresh reconciliation, and zero replacement starts.
+- Disposable real Codex smoke applied same-owner start and cancel and excluded
+  the private canary from receipts. Resume-limit diagnostics and all temporary
+  files/processes were cleaned up.
+- Full Task 0010 Builder checks pass on the exact tree: 102 tests, production
+  build, and diff check; the dependency lockfile is unchanged.
 
 ## In progress
 
-- Task 0010 Codex control and local console implementation.
+- Independent Task 0010 review and final Phase 2 closure.
 
 ## Next up
 
-1. Task 0010 Codex control and console implementation.
-2. Combined fresh review, real disposable smoke, full QA, and Phase 2 closure.
+1. Independent Task 0010 durability, security, privacy, and scope review.
+2. Final exact-tree QA and Phase 2 closure.
 
 ## Blockers
 
@@ -58,4 +88,5 @@ Last updated: 2026-07-16
 - Work facts and receipts reuse the one canonical event log.
 - Codex is the sole Phase 2 execution provider.
 - Codex work is workspace-write with no approval escalation.
+- Codex control is same-owner-boot only; restart is at-most-once and fail-closed.
 - Cloud and generalized provider control remain deferred.

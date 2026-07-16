@@ -21,7 +21,8 @@ main {
 
 .hero,
 .section-heading,
-.sessions li {
+.sessions li,
+.work-summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -78,6 +79,35 @@ button {
 button:focus-visible {
   outline: 3px solid Highlight;
   outline-offset: 3px;
+}
+
+input,
+textarea {
+  width: 100%;
+  padding: 0.7rem;
+  border: 1px solid color-mix(in srgb, CanvasText 35%, transparent);
+  border-radius: 0.5rem;
+  background: Canvas;
+  color: CanvasText;
+  font: inherit;
+}
+
+input:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid Highlight;
+  outline-offset: 2px;
+}
+
+label {
+  display: grid;
+  gap: 0.4rem;
+  font-weight: 700;
+}
+
+.work-form {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.25rem;
 }
 
 section {
@@ -147,13 +177,17 @@ dd {
 }
 
 .badge.running,
-.badge.available {
+.badge.available,
+.badge.applied {
   border-color: LinkText;
 }
 
 .badge.failed,
+.badge.blocked,
 .badge.degraded,
-.badge.unavailable {
+.badge.unavailable,
+.badge.rejected,
+.badge.expired {
   border-color: Mark;
 }
 
@@ -161,6 +195,58 @@ dd {
   margin: 1rem 0 0;
   padding: 0;
   list-style: none;
+}
+
+.work-items,
+.receipts {
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.work-items > li,
+.receipts li {
+  padding: 1rem 0;
+  border-top: 1px solid color-mix(in srgb, CanvasText 14%, transparent);
+}
+
+.work-summary {
+  align-items: start;
+}
+
+.work-summary h3 {
+  margin: 0;
+}
+
+.work-summary p {
+  max-width: 44rem;
+  margin: 0.35rem 0 0;
+  overflow-wrap: anywhere;
+  color: color-mix(in srgb, CanvasText 68%, transparent);
+  font-size: 0.85rem;
+}
+
+.work-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.work-actions button {
+  min-height: 2.75rem;
+}
+
+.receipts li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.receipts time {
+  color: color-mix(in srgb, CanvasText 68%, transparent);
+  font-size: 0.85rem;
 }
 
 .sessions li {
@@ -182,7 +268,9 @@ dd {
 
 @media (max-width: 40rem) {
   .hero,
-  .sessions li {
+  .sessions li,
+  .section-heading,
+  .work-summary {
     align-items: stretch;
     flex-direction: column;
   }
@@ -198,5 +286,9 @@ dd {
   .session-state {
     justify-items: start;
     text-align: left;
+  }
+
+  .receipts li {
+    grid-template-columns: 1fr;
   }
 }

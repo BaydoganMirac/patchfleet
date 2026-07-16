@@ -1,6 +1,6 @@
 # Task card 0010: Codex local work control and console
 
-Status: Approved
+Status: Builder complete; independent review pending
 
 Coordinator: Patchfleet coordinator
 
@@ -23,8 +23,9 @@ flow.
 ## Observable outcome
 
 The local page can enqueue a Codex work item, start exactly one sandboxed turn,
-show the linked opaque run/session state, cancel it, and recover queue, run, and
-receipt state after restart.
+show the linked opaque run/session state, cancel it during the owning server
+boot, and recover queue, run, receipt, and honest blocked/session-lost state
+after restart without launching replacement work.
 
 ## Owned files
 
@@ -37,6 +38,8 @@ The Builder may change only:
 - `app/page.tsx`, `app/globals.css`, and local work mutation routes under
   `app/api/`;
 - `app/api/observe/route.ts` only to reuse the mutation guard;
+- `package.json` and one dependency-free local Next.js launcher only to assign
+  one opaque owner epoch to all server workers;
 - focused Codex control, local shell, runtime, and route tests under `tests/`;
 - `README.md` and `docs/state/v0-local-work-control.md`.
 
@@ -54,7 +57,16 @@ extension, and Claude/Gemini control code are read-only.
   root, the user's home directory, missing/non-directory paths, and paths
   without a `.git` file or directory.
 - Start one text turn and persist only validated opaque thread/turn IDs.
-- Resume a stored thread before interrupt after runtime restart.
+- Keep initialize capabilities null and use no experimental API.
+- Before any provider launch, fsync a `run.launching` marker with the current
+  opaque owner epoch; carry that epoch through prepared, turn-requested, and
+  started facts.
+- Fsync only the opaque thread identifier in `run.prepared` and
+  `turn.requested` before `turn/start`.
+- Interrupt only through the app-server connection that owns the active turn.
+  Codex 0.144.1 rejects resume after that owner closes, so an old-epoch pending
+  launch becomes `START_OUTCOME_UNKNOWN`/blocked and an old-epoch active run
+  becomes session-lost/failed/blocked. Never start a replacement thread or turn.
 - Reject app-server requests and discard notifications without serializing
   their contents.
 - Collapse process/protocol failures into stable safe reason codes.
@@ -70,18 +82,35 @@ extension, and Claude/Gemini control code are read-only.
 
 ## Acceptance
 
-- Fake app-server tests prove initialize, start, resume, interrupt, duplicate
-  suppression, restart recovery, request rejection, and raw-data exclusion.
+- Fake app-server tests prove initialize, start, same-owner interrupt,
+  duplicate suppression, owner-epoch crash windows, fail-closed restart
+  reconciliation, request rejection, and raw-data exclusion.
 - Local-shell tests prove origin/body bounds, route redirects, capability-aware
   UI, durable queue, and restart state.
-- One disposable real Codex smoke starts in a temporary workspace and is
-  interrupted; its prompt/output/path is absent from receipts and observation
-  projection.
+- Disposable real Codex diagnostics prove same-owner start/interrupt and record
+  that both empty-thread and active-turn resume are rejected after owner loss;
+  prompts/output/paths remain absent from receipts and observation projection.
 - Existing 84 Phase 1 tests remain green.
 - `npm test`, `npm run build`, and `git diff --check` pass.
 - no dependency or lockfile change.
 - independent review reports no unresolved P0-P2 finding.
 - one local Builder commit exists; no push.
+
+## Builder evidence
+
+- Focused control/runtime tests cover every pre-provider, post-prepare,
+  post-turn-request, uncertain-start, same-owner cancel, and old-owner active
+  run window without a replacement provider start.
+- Local-shell tests cover the loopback launcher epoch, stale GET without
+  mutation, Refresh reconciliation, blocked/session-lost UI, route bounds,
+  responsive behavior, and privacy canaries.
+- A disposable real Codex 0.144.1 smoke completed same-owner start/cancel. Two
+  bounded restart diagnostics then proved that a new app-server rejects resume
+  for both an empty prepared thread and an active turn. All disposable
+  processes and temporary directories were removed.
+- The exact Builder tree passes 102 tests, the production Next.js build, and
+  `git diff --check`; the dependency lockfile is unchanged.
+- Independent review remains the only post-Builder acceptance step.
 
 ## Forbidden scope
 

@@ -1,4 +1,6 @@
-import { readProjection } from "@/lib/runtime/observation-store.mjs";
+import { randomUUID } from "node:crypto";
+import { readProjection, readWorkProjection } from "@/lib/runtime/observation-store.mjs";
+import { currentWorkControlOwnerEpoch } from "@/lib/runtime/work-queue.mjs";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +31,42 @@ type Projection = {
   observations: Observation[];
 };
 
+type WorkItem = {
+  workItemId: string;
+  title: string;
+  instruction: string;
+  providerId: "codex";
+  workingDirectory: string;
+  status: "queued" | "launching" | "running" | "cancelling" | "blocked" | "completed" | "failed" | "interrupted";
+  createdAt: string;
+  revision: number;
+};
+
+type Run = {
+  runId: string;
+  workItemId: string;
+  ownerEpoch: string;
+  providerSessionId: string;
+  providerTurnId: string;
+  status: "running" | "cancelling" | "completed" | "failed" | "interrupted";
+  revision: number;
+};
+
+type Receipt = {
+  intentId: string;
+  outcome: "applied" | "rejected" | "expired" | "failed";
+  reasonCode: string;
+  completedAt: string;
+};
+
+type WorkProjection = {
+  schemaVersion: 1;
+  revision: number;
+  items: WorkItem[];
+  runs: Run[];
+  receipts: Receipt[];
+};
+
 function time(value: string) {
   return new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(
     new Date(value),
@@ -45,16 +83,21 @@ function providerLabel(state: Observation["provider"]["state"]) {
   return "Unavailable";
 }
 
-async function loadProjection() {
+async function loadState() {
   try {
-    return { kind: "ready" as const, projection: (await readProjection()) as Projection | null };
+    const [projection, work] = await Promise.all([readProjection(), readWorkProjection()]);
+    return {
+      kind: "ready" as const,
+      projection: projection as Projection | null,
+      work: (work ?? { schemaVersion: 1, revision: 0, items: [], runs: [], receipts: [] }) as WorkProjection,
+    };
   } catch {
     return { kind: "fatal" as const };
   }
 }
 
 export default async function Home() {
-  const result = await loadProjection();
+  const result = await loadState();
 
   return (
     <main>
@@ -63,7 +106,7 @@ export default async function Home() {
           <p className="eyebrow">Local-only console</p>
           <h1>Patchfleet</h1>
           <p className="summary">
-            Honest, restart-safe lifecycle metadata from supported provider surfaces.
+            Restart-safe local work and honest lifecycle metadata from supported provider surfaces.
           </p>
         </div>
         <form action="/api/observe" method="post">
@@ -74,17 +117,180 @@ export default async function Home() {
       {result.kind === "fatal" ? (
         <section className="notice error" aria-labelledby="storage-error" role="alert">
           <h2 id="storage-error">Local storage needs attention</h2>
-          <p>The durable observation projection is corrupt. No provider process was started.</p>
-        </section>
-      ) : result.projection === null ? (
-        <section className="notice" aria-labelledby="never-observed">
-          <h2 id="never-observed">Providers have not been observed</h2>
-          <p>Refresh once to check the installed CLIs and store local snapshots.</p>
+          <p>The durable local projection is corrupt. No provider process was started.</p>
         </section>
       ) : (
-        <Dashboard projection={result.projection} />
+        <>
+          <WorkConsole
+            work={result.work}
+            projection={result.projection}
+            ownerEpoch={currentWorkControlOwnerEpoch()}
+          />
+          {result.projection === null ? (
+            <section className="notice" aria-labelledby="never-observed">
+              <h2 id="never-observed">Providers have not been observed</h2>
+              <p>Refresh once to check the installed CLIs and enable proven controls.</p>
+            </section>
+          ) : (
+            <Dashboard projection={result.projection} />
+          )}
+        </>
       )}
     </main>
+  );
+}
+
+function commandId() {
+  return `cmd:${randomUUID()}`;
+}
+
+function CommandFields() {
+  const createdAt = new Date();
+  return (
+    <>
+      <input type="hidden" name="commandId" value={commandId()} />
+      <input type="hidden" name="createdAt" value={createdAt.toISOString()} />
+      <input type="hidden" name="expiresAt" value={new Date(createdAt.valueOf() + 5 * 60_000).toISOString()} />
+    </>
+  );
+}
+
+function WorkConsole({ work, projection, ownerEpoch }: {
+  work: WorkProjection;
+  projection: Projection | null;
+  ownerEpoch: string;
+}) {
+  const codexAvailable = projection?.observations.some(
+    (item) => item.provider.id === "codex" && item.provider.state === "available",
+  ) ?? false;
+  const latestReceipts = work.receipts.slice(-5).reverse();
+  return (
+    <>
+      <section aria-labelledby="create-work-title">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Local work intake</p>
+            <h2 id="create-work-title">Queue Codex work</h2>
+          </div>
+          <span className="count">{work.items.length} items</span>
+        </div>
+        <form className="work-form" action="/api/work" method="post">
+          <input type="hidden" name="action" value="enqueue" />
+          <CommandFields />
+          <label>
+            Title
+            <input name="title" required maxLength={160} autoComplete="off" />
+          </label>
+          <label>
+            Git worktree root
+            <input name="workingDirectory" required maxLength={4096} autoComplete="off" />
+          </label>
+          <label>
+            Instruction
+            <textarea name="instruction" required maxLength={50000} rows={5} />
+          </label>
+          <button type="submit">Add to queue</button>
+        </form>
+        <p className="snapshot">Instructions and paths stay in the local work projection.</p>
+      </section>
+
+      <section aria-labelledby="work-items-title">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Durable queue</p>
+            <h2 id="work-items-title">Work items</h2>
+          </div>
+          <span className={`badge ${codexAvailable ? "available" : "unavailable"}`}>
+            Codex {codexAvailable ? "ready" : "control unavailable"}
+          </span>
+        </div>
+        {work.items.length === 0 ? (
+          <p className="empty">No local work has been queued.</p>
+        ) : (
+          <ul className="work-items">
+            {work.items.map((item) => {
+              const run = work.runs.find((candidate) => candidate.workItemId === item.workItemId);
+              const staleRun = run?.status === "running" && run.ownerEpoch !== ownerEpoch;
+              return (
+                <li key={item.workItemId}>
+                  <div className="work-summary">
+                    <div>
+                      <h3>{item.title}</h3>
+                      <p><code>{item.workingDirectory}</code></p>
+                      {run ? <p>Run <code>{shortId(run.runId)}</code> · turn <code>{shortId(run.providerTurnId)}</code></p> : null}
+                      {staleRun ? <p>Control owner changed. Refresh providers to reconcile this run safely.</p> : null}
+                    </div>
+                    <span className={`badge ${item.status}`}>{item.status}</span>
+                  </div>
+                  <div className="work-actions">
+                    {item.status === "queued" && codexAvailable ? (
+                      <WorkAction action="start" item={item}>Start Codex</WorkAction>
+                    ) : null}
+                    {item.status === "queued" ? (
+                      <WorkAction action="remove" item={item}>Remove</WorkAction>
+                    ) : null}
+                    {run?.status === "running" && !staleRun && codexAvailable ? (
+                      <RunCancel run={run} />
+                    ) : null}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
+      <section aria-labelledby="receipts-title">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Safe outcomes</p>
+            <h2 id="receipts-title">Recent receipts</h2>
+          </div>
+          <span className="count">revision {work.revision}</span>
+        </div>
+        {latestReceipts.length === 0 ? (
+          <p className="empty">No local command receipts yet.</p>
+        ) : (
+          <ul className="receipts">
+            {latestReceipts.map((receipt) => (
+              <li key={receipt.intentId}>
+                <span className={`badge ${receipt.outcome}`}>{receipt.outcome}</span>
+                <code>{receipt.reasonCode}</code>
+                <time dateTime={receipt.completedAt}>{time(receipt.completedAt)}</time>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </>
+  );
+}
+
+function WorkAction({ action, item, children }: {
+  action: "start" | "remove";
+  item: WorkItem;
+  children: React.ReactNode;
+}) {
+  return (
+    <form action="/api/work" method="post">
+      <input type="hidden" name="action" value={action} />
+      <CommandFields />
+      <input type="hidden" name="workItemId" value={item.workItemId} />
+      <input type="hidden" name="expectedItemRevision" value={item.revision} />
+      <button type="submit">{children}</button>
+    </form>
+  );
+}
+
+function RunCancel({ run }: { run: Run }) {
+  return (
+    <form action="/api/work" method="post">
+      <input type="hidden" name="action" value="cancel" />
+      <CommandFields />
+      <input type="hidden" name="runId" value={run.runId} />
+      <input type="hidden" name="expectedRunRevision" value={run.revision} />
+      <button type="submit">Cancel run</button>
+    </form>
   );
 }
 

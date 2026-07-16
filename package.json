@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack --hostname 127.0.0.1",
+    "dev": "node scripts/local-next.mjs dev",
     "build": "next build --turbopack",
-    "start": "next start --hostname 127.0.0.1",
+    "start": "node scripts/local-next.mjs start",
     "test": "node --test --test-concurrency=1 tests/*.test.*"
   },
   "dependencies": {

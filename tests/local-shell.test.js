@@ -1,7 +1,7 @@
 const assert = require("node:assert/strict");
 const { spawn } = require("node:child_process");
 const { once } = require("node:events");
-const { chmod, mkdtemp, readFile, writeFile } = require("node:fs/promises");
+const { chmod, mkdir, mkdtemp, readFile, writeFile } = require("node:fs/promises");
 const { request } = require("node:http");
 const { createServer } = require("node:net");
 const { tmpdir } = require("node:os");
@@ -82,6 +82,7 @@ async function startNext(dataDir, binDir) {
       env: {
         ...process.env,
         PATCHFLEET_DATA_DIR: dataDir,
+        PATCHFLEET_OWNER_EPOCH: `test-owner-${port}`,
         PATH: `${binDir}${delimiter}${process.env.PATH}`,
       },
       stdio: "ignore",
@@ -105,10 +106,16 @@ async function fakeProviders() {
   const gemini = join(binDir, "gemini");
   const geminiMode = join(binDir, "gemini-mode");
   const marker = join(binDir, "marker");
+  const controlState = join(binDir, "control-state.json");
   const codexSource = `#!/usr/bin/env node
 const fs = require("node:fs");
 const readline = require("node:readline");
 const marker = ${JSON.stringify(marker)};
+const controlState = ${JSON.stringify(controlState)};
+const readState = () => fs.existsSync(controlState)
+  ? JSON.parse(fs.readFileSync(controlState, "utf8"))
+  : { threadStarts: 0, turnStarts: 0, interrupts: 0, threads: [] };
+const writeState = (state) => fs.writeFileSync(controlState, JSON.stringify(state));
 if (process.argv.includes("--version")) console.log("codex-cli 1.2.3");
 else {
   fs.appendFileSync(marker, "start\\n");
@@ -118,11 +125,45 @@ else {
     const message = JSON.parse(line);
     if (message.method === "initialized") return;
     if (message.method === "initialize") return send({ id: message.id, result: { codexHome: "/private/CANARY_PATH" } });
-    if (message.method === "thread/list") return send({ id: message.id, result: { data: [{ id: "web-session-id", preview: "CANARY_PROMPT" }] } });
-    if (message.method === "thread/read") return send({ id: message.id, result: { thread: {
-      id: "web-session-id", createdAt: 1700000000, status: { type: "active", activeFlags: [] }, turns: [],
-      preview: "CANARY_PROMPT", cwd: "/private/CANARY_PATH", items: [{ text: "CANARY_TRANSCRIPT" }]
-    } } });
+    if (message.method === "thread/list") {
+      const state = readState();
+      const data = JSON.stringify(message.params.sourceKinds) === JSON.stringify(["appServer"])
+        ? state.threads
+        : [{ id: "web-session-id", preview: "CANARY_PROMPT" }];
+      return send({ id: message.id, result: { data, nextCursor: null } });
+    }
+    if (message.method === "thread/read") {
+      const controlled = readState().threads.find((item) => item.id === message.params.threadId);
+      return send({ id: message.id, result: { thread: controlled ?? {
+        id: "web-session-id", createdAt: 1700000000, status: { type: "active", activeFlags: [] }, turns: [],
+        preview: "CANARY_PROMPT", cwd: "/private/CANARY_PATH", items: [{ text: "CANARY_TRANSCRIPT" }]
+      } } });
+    }
+    if (message.method === "thread/start") {
+      const state = readState();
+      const thread = { id: "web-control-thread", cwd: message.params.cwd, threadSource: message.params.threadSource, ephemeral: false, turns: [] };
+      state.threadStarts += 1; state.threads = [thread]; writeState(state);
+      return send({ id: message.id, result: { thread } });
+    }
+    if (message.method === "thread/resume") {
+      const thread = readState().threads.find((item) => item.id === message.params.threadId);
+      return send({ id: message.id, result: { thread } });
+    }
+    if (message.method === "turn/start") {
+      const state = readState();
+      state.turnStarts += 1;
+      state.threads[0].turns = [{ id: "web-control-turn", status: "inProgress", completedAt: null, items: [{ text: "CANARY_TRANSCRIPT" }] }];
+      writeState(state);
+      return send({ id: message.id, result: { turn: state.threads[0].turns[0] } });
+    }
+    if (message.method === "turn/interrupt") {
+      const state = readState();
+      state.interrupts += 1;
+      state.threads[0].turns[0].status = "interrupted";
+      state.threads[0].turns[0].completedAt = 1784200000;
+      writeState(state);
+      return send({ id: message.id, result: {} });
+    }
   });
 }
 `;
@@ -151,7 +192,26 @@ else process.exit(1);
   await chmod(codex, 0o700);
   await chmod(claude, 0o700);
   await chmod(gemini, 0o700);
-  return { binDir, geminiMode, marker };
+  return { binDir, geminiMode, marker, controlState };
+}
+
+function formBody(fields) {
+  return new URLSearchParams(fields).toString();
+}
+
+function postForm(port, fields, options = {}) {
+  const body = typeof fields === "string" ? fields : formBody(fields);
+  return fetch(port, {
+    path: "/api/work",
+    method: "POST",
+    headers: {
+      origin: `http://127.0.0.1:${port}`,
+      "content-type": "application/x-www-form-urlencoded",
+      "content-length": String(Buffer.byteLength(body)),
+      ...options.headers,
+    },
+    body,
+  });
 }
 
 function projection({ state = "available", sessions = [], error } = {}) {
@@ -184,8 +244,10 @@ async function markerText(marker) {
 
 test("local shell enforces the browser boundary and renders durable observation states", { timeout: 90000 }, async () => {
   const { scripts } = JSON.parse(await readFile("package.json", "utf8"));
-  assert.match(scripts.dev, /--hostname 127\.0\.0\.1/);
-  assert.match(scripts.start, /--hostname 127\.0\.0\.1/);
+  assert.equal(scripts.dev, "node scripts/local-next.mjs dev");
+  assert.equal(scripts.start, "node scripts/local-next.mjs start");
+  const launcher = await readFile("scripts/local-next.mjs", "utf8");
+  assert.match(launcher, /"--hostname",\s*"127\.0\.0\.1"/);
 
   const dataDir = await mkdtemp(join(tmpdir(), "patchfleet-web-data-"));
   const { binDir, geminiMode, marker } = await fakeProviders();
@@ -335,6 +397,139 @@ test("local shell enforces the browser boundary and renders durable observation 
     assert.match(recovered.body, /restart-session/);
     assert.match(recovered.body, /Live status not observed/);
     assert.equal(await markerText(marker), markerBeforeRestart, "restart must not run Codex");
+  } finally {
+    await stopNext(server.child);
+  }
+});
+
+test("local work route is bounded, capability-aware, idempotent, and restart-safe", { timeout: 90000 }, async () => {
+  const dataDir = await mkdtemp(join(tmpdir(), "patchfleet-web-work-data-"));
+  const workspace = await mkdtemp(join(tmpdir(), "patchfleet-web-workspace-"));
+  await mkdir(join(workspace, ".git"));
+  const { binDir, controlState } = await fakeProviders();
+  const createdAt = new Date();
+  const commandTimes = {
+    createdAt: createdAt.toISOString(),
+    expiresAt: new Date(createdAt.valueOf() + 5 * 60_000).toISOString(),
+  };
+  const enqueueFields = {
+    action: "enqueue",
+    commandId: "cmd:11111111-1111-4111-8111-111111111111",
+    ...commandTimes,
+    title: "Route-safe work",
+    instruction: "Perform one safe local task.",
+    workingDirectory: workspace,
+  };
+  const workItemId = "work:11111111-1111-4111-8111-111111111111";
+  let server = await startNext(dataDir, binDir);
+
+  try {
+    const initial = await fetch(server.port);
+    assert.match(initial.body, /Queue Codex work/);
+    assert.match(initial.body, /control unavailable/);
+    assert.doesNotMatch(initial.body, /Start Codex/);
+
+    const validBody = formBody(enqueueFields);
+    assert.equal((await fetch(server.port, {
+      path: "/api/work",
+      method: "POST",
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
+        "content-length": String(Buffer.byteLength(validBody)),
+      },
+      body: validBody,
+    })).statusCode, 403, "missing Origin");
+    assert.equal((await postForm(server.port, validBody.replace("action=enqueue", "action=enqueue&action=enqueue"))).statusCode, 403, "duplicate field");
+    assert.equal((await postForm(server.port, `${validBody}&extra=true`)).statusCode, 403, "extra field");
+    assert.equal((await postForm(server.port, { ...enqueueFields, instruction: "x".repeat(66_000) })).statusCode, 403, "oversized body");
+
+    const enqueued = await postForm(server.port, enqueueFields);
+    assert.equal(enqueued.statusCode, 303);
+    assert.equal(new URL(enqueued.headers.location).pathname, "/");
+    let page = await fetch(server.port);
+    assert.match(page.body, /Route-safe work/);
+    assert.match(page.body, new RegExp(workspace.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    assert.doesNotMatch(page.body, /Start Codex/);
+
+    const unavailable = await postForm(server.port, {
+      action: "start",
+      commandId: "cmd:44444444-4444-4444-8444-444444444444",
+      ...commandTimes,
+      workItemId,
+      expectedItemRevision: "1",
+    });
+    assert.equal(unavailable.statusCode, 303);
+    assert.match((await fetch(server.port)).body, /PROVIDER_CONTROL_UNAVAILABLE/);
+
+    await stopNext(server.child);
+    server = await startNext(dataDir, binDir);
+    page = await fetch(server.port);
+    assert.match(page.body, /Route-safe work/);
+    assert.match(page.body, /PROVIDER_CONTROL_UNAVAILABLE/);
+
+    assert.equal((await fetch(server.port, {
+      path: "/api/observe",
+      method: "POST",
+      headers: { origin: `http://127.0.0.1:${server.port}` },
+    })).statusCode, 303);
+    page = await fetch(server.port);
+    assert.match(page.body, /Start Codex/);
+
+    const startFields = {
+      action: "start",
+      commandId: "cmd:22222222-2222-4222-8222-222222222222",
+      ...commandTimes,
+      workItemId,
+      expectedItemRevision: "1",
+    };
+    const started = await postForm(server.port, startFields);
+    assert.equal(started.statusCode, 303, started.body);
+    assert.equal((await postForm(server.port, startFields)).statusCode, 303);
+    page = await fetch(server.port);
+    assert.match(page.body, /Cancel run/);
+    assert.match(page.body, /WORK_STARTED/);
+    assert.doesNotMatch(page.body, /Start Codex/);
+    assert.deepEqual(
+      Object.fromEntries(Object.entries(JSON.parse(await readFile(controlState, "utf8"))).filter(([key]) => key !== "threads")),
+      { threadStarts: 1, turnStarts: 1, interrupts: 0 },
+    );
+
+    await stopNext(server.child);
+    server = await startNext(dataDir, binDir);
+    page = await fetch(server.port);
+    assert.match(page.body, /Control owner changed/);
+    assert.match(page.body, /WORK_STARTED/);
+    assert.doesNotMatch(page.body, /Cancel run/);
+    assert.equal((await fetch(server.port, {
+      path: "/api/observe",
+      method: "POST",
+      headers: { origin: `http://127.0.0.1:${server.port}` },
+    })).statusCode, 303);
+    page = await fetch(server.port);
+    assert.match(page.body, />blocked</);
+    assert.doesNotMatch(page.body, /Cancel run/);
+    assert.equal(JSON.parse(await readFile(controlState, "utf8")).interrupts, 0);
+    const reconciledWork = JSON.parse(await readFile(join(dataDir, "work-items.json"), "utf8"));
+    assert.deepEqual(
+      [reconciledWork.items[0].status, reconciledWork.runs[0].status],
+      ["blocked", "failed"],
+    );
+
+    const events = (await readFile(join(dataDir, "events.jsonl"), "utf8"))
+      .trim()
+      .split("\n")
+      .map(JSON.parse);
+    assert.equal(events.filter((item) => item.type === "run.session_lost").length, 1);
+    const safeState = JSON.stringify({
+      receipts: events.filter((item) => item.type === "command.receipted"),
+      observation: JSON.parse(await readFile(join(dataDir, "observation.json"), "utf8")),
+    });
+    assert.equal(safeState.includes(enqueueFields.instruction), false);
+    assert.equal(safeState.includes(workspace), false);
+
+    const css = await readFile("app/globals.css", "utf8");
+    assert.match(css, /@media \(max-width: 40rem\)[\s\S]*\.work-summary/);
+    assert.match(css, /\.work-actions[\s\S]*flex-wrap: wrap/);
   } finally {
     await stopNext(server.child);
   }

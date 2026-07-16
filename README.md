@@ -13,10 +13,10 @@ local installation.
 
 ## Current status
 
-Phase 1 is complete. The local console observes Codex, Claude Code, and Gemini
-CLI through their supported structured surfaces and persists one sanitized,
-rebuildable local projection. Durable work intake, provider control, and Cloud
-connectivity are the next milestones and are not implemented yet.
+Phase 1 observation is complete. Phase 2 now adds a durable local work queue,
+safe command receipts, and start/cancel control for Codex inside an explicitly
+selected Git worktree. Claude Code and Gemini CLI remain observation-only.
+Optional Cloud connectivity is not implemented yet.
 
 Start with [the documentation map](docs/README.md) before changing code.
 
@@ -28,7 +28,17 @@ Start with [the documentation map](docs/README.md) before changing code.
 The local app runs at http://127.0.0.1:3000 and accepts only `localhost` or
 `127.0.0.1` Host values. Use the manual refresh to store up to 20 recent
 sessions per provider. Patchfleet does not retain prompts, titles, paths,
-transcripts, tools, diffs, reasoning, or tokens.
+transcripts, tools, diffs, reasoning, or tokens in its observation projection.
+Owner-authored work titles, instructions, and worktree paths are retained only
+in the separate local work projection and never copied into command receipts.
+
+Queue work from the console by providing a title, instruction, and absolute Git
+worktree root. Enqueue works without Codex; start appears only after Codex is
+observed as available. Patchfleet starts Codex with `workspace-write` and
+approval policy `never`, and exposes cancel only for a linked active run.
+Codex control belongs to the current local app boot. After an app restart,
+Patchfleet hides Cancel until Refresh safely reconciles an old active run as
+session-lost/blocked; it never launches replacement work automatically.
 
 Gemini lifecycle observation is opt-in. From the Patchfleet checkout, let
 Gemini CLI link the checked-in extension, then restart Gemini:
