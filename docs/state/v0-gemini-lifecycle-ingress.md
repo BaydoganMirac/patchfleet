@@ -1,6 +1,6 @@
 # V0 Gemini lifecycle ingress
 
-Status: In progress
+Status: Done
 
 Last updated: 2026-07-16
 
@@ -9,7 +9,8 @@ Last updated: 2026-07-16
 Task card 0008 connects the proven Gemini decoder through Gemini
 CLI's native linked-extension mechanism and a sanitized local inbox. Automated
 work does not mutate real extension state or user settings; the owner linked
-the extension during the explicit smoke test.
+and uninstalled the extension during the explicit smoke test. The final native
+state is uninstalled.
 
 ## Done
 
@@ -52,16 +53,20 @@ the extension during the explicit smoke test.
   stderr while rejecting mixed-channel output; native fields remain discarded.
 - Post-fix checks passed: focused Gemini adapter 19 tests, full suite 84 tests,
   production build, and `git diff --check`.
+- Independent smoke-fix review passed with no P0-P3 finding.
+- Production `observeGemini()` reported the linked extension `available` with
+  both observation capabilities enabled.
+- Native uninstall succeeded; production observation returned to the expected
+  `GEMINI_HOOK_SETUP_REQUIRED` state.
 
 ## In progress
 
-- Owner recheck of production `observeGemini()` after the stderr compatibility
-  fix.
+- None.
 
 ## Next up
 
-1. Recheck the already-linked extension through production `observeGemini()`.
-2. Let the owner uninstall the extension after the successful recheck.
+1. Link the extension again only when the owner wants ongoing Gemini lifecycle
+   observation.
 
 ## Blockers
 
@@ -91,8 +96,9 @@ the extension during the explicit smoke test.
   behavior.
 - Builder completed the approved extension, inbox, adapter-status, serialized
   persistence, retention, setup-clearing, documentation, and focused checks.
-- No real extension lifecycle command ran and no Gemini settings file was read
-  or changed.
+- Builder and Reviewer automation ran no real extension lifecycle command and
+  read no Gemini settings file; the later owner smoke used only native link,
+  status, and uninstall commands.
 - Review follow-up preserved sessions across transient probe failures while
   keeping setup-required and unavailable clearing honest, and stopped active
   refreshes from appending duplicate session facts.
@@ -100,5 +106,5 @@ the extension during the explicit smoke test.
   finding remains.
 - The first owner smoke linked the real extension, then exposed that Gemini CLI
   0.43.0 writes pure JSON extension-list output to stderr despite exit code 0.
-  The extension remains linked for the coordinator's post-fix verification;
-  no user settings were read or changed by the fix.
+  The compatibility fix passed independent review, production status reported
+  `available`, and native uninstall restored the expected setup-required state.

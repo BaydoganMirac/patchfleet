@@ -16,6 +16,8 @@ Completed: 2026-07-16
 
 Independent review: Passed after focused session-preservation follow-up
 
+Owner native smoke: Passed after Gemini 0.43.0 stderr compatibility fix
+
 Depends on: Task cards 0004, 0006, and 0007 completed and independently reviewed
 
 ## Objective
