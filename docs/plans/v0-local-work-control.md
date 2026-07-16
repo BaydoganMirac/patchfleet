@@ -1,6 +1,6 @@
 # Phase 2: Durable local work control
 
-Status: In progress
+Status: Completed
 
 Owner: Patchfleet coordinator
 
@@ -27,6 +27,8 @@ provider control.
 3. A fresh reviewer verifies the combined committed Phase 2 artifact.
 4. Full tests, production build, restart recovery, duplicate delivery, stale
    revision, privacy canaries, and a disposable real Codex smoke must pass.
+
+All four steps completed on 2026-07-16.
 
 ## Locked product contract
 
@@ -68,3 +70,17 @@ provider control.
 - daemon, watcher, desktop shell, installer, background startup, and Windows
   packaging.
 
+## Completion evidence
+
+- Task 0009 and Task 0010 are completed and independently reviewed with no
+  unresolved P0-P2 finding.
+- The final tree passes 120 tests, a fresh production build, and
+  `git diff --check`.
+- A disposable real Codex 0.144.1 smoke produced `WORK_STARTED`, then
+  `RUN_CANCELLED`; the item and run finished `interrupted`.
+- Timeout, malformed-success, owner-loss, concurrent Refresh, duplicate
+  delivery, and incomplete receipt-tail cases terminate without repeating a
+  provider side effect.
+- Privacy canaries remain absent from receipts and observation projections;
+  dependencies and the lockfile are unchanged.
+- Commits remain local for owner review. Nothing was pushed or deployed.

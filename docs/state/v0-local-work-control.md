@@ -1,6 +1,6 @@
 # V0 local work control
 
-Status: In progress
+Status: Done
 
 Last updated: 2026-07-16
 
@@ -64,15 +64,37 @@ Last updated: 2026-07-16
   files/processes were cleaned up.
 - Full Task 0010 Builder checks pass on the exact tree: 102 tests, production
   build, and diff check; the dependency lockfile is unchanged.
+- Closed the first independent review findings: uncertain thread/turn starts
+  and interrupts now terminalize in the same call; old-owner pending cancels
+  receive a durable receipt; UI and POST share the stable Codex 0.144.1+
+  compatibility gate.
+- Closed the second review's concurrency finding: a simultaneous terminal
+  observation and successful cancel now produces one idempotent fact and
+  receipt without a second revision. Completed/failed races do not claim a
+  cancellation succeeded.
+- Exact retry repairs missing receipts after durable `run.started`,
+  `run.start_unknown`, `run.interrupted`, or `run.session_lost` facts, including
+  an incomplete receipt tail, without another provider call.
+- Final independent re-review reports no unresolved P0-P2 finding. The final
+  exact tree passes 120 tests, a production build, and `git diff --check`.
+- Final disposable Codex 0.144.1 smoke produced `WORK_STARTED` then
+  `RUN_CANCELLED`; item and run ended `interrupted`, privacy canaries remained
+  absent, and temporary processes/directories were removed.
+- Phase 2 implementation commits are local only; nothing was pushed or
+  deployed.
+- Task 0010 implementation and hardening are recorded in local commits
+  `df4a725`, `10064c8`, and `b82db83`.
 
 ## In progress
 
-- Independent Task 0010 review and final Phase 2 closure.
+- None. Phase 2 is closed.
 
 ## Next up
 
-1. Independent Task 0010 durability, security, privacy, and scope review.
-2. Final exact-tree QA and Phase 2 closure.
+1. Prepare an owner-approved Phase 3 plan for optional Cloud pairing and the
+   smallest sanitized outbound projection.
+2. Do not implement Cloud, remote commands, packaging, auth, or billing before
+   that plan is explicitly approved.
 
 ## Blockers
 

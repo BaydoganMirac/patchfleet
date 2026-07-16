@@ -9,17 +9,21 @@ commitments.
 
 ## Now
 
-- Keep the completed Phase 1 three-provider observation loop stable.
+- Keep the completed Phase 1 three-provider observation loop and completed
+  Phase 2 durable Codex control loop stable.
 - Keep the local/Cloud trust contract and contributor rules reviewable.
-- Plan the first durable local work-intake queue through an approved task card.
+- Validate the local queue, receipts, restart behavior, and same-boot Codex
+  control with real users before broadening provider control.
 
 ## Next
 
-- Add a durable local work queue and capability-aware controls.
-- Start and cancel work through one proven provider before generalizing control.
-- Pair with optional Patchfleet Cloud through outbound HTTPS.
-- Publish only allowlisted operational projections and apply only typed,
-  validated remote intents.
+- Approve a Phase 3 pairing and threat-model plan before Cloud implementation.
+- Pair with optional Patchfleet Cloud through outbound HTTPS, then publish only
+  an allowlisted operational projection.
+- Add typed, validated remote intents only after pairing, revocation, replay,
+  authorization, and receipt contract tests pass.
+- Generalize execution control to Claude Code or Gemini only after a provider
+  proves an equally safe supported lifecycle surface.
 
 ## Later
 

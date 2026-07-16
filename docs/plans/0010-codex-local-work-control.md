@@ -1,6 +1,6 @@
 # Task card 0010: Codex local work control and console
 
-Status: Builder complete; independent review pending
+Status: Completed
 
 Coordinator: Patchfleet coordinator
 
@@ -119,7 +119,13 @@ extension, and Claude/Gemini control code are read-only.
   processes and temporary directories were removed.
 - The exact Builder tree passes 102 tests, the production Next.js build, and
   `git diff --check`; the dependency lockfile is unchanged.
-- Independent review remains the only post-Builder acceptance step.
+- Hardening review closed uncertain same-owner start/cancel redelivery,
+  old-owner pending-cancel receipts, control compatibility gating, concurrent
+  Refresh/cancel finalization, and fact-only receipt-tail recovery.
+- The final exact tree passes 120 tests, the production Next.js build, and
+  `git diff --check`; the dependency lockfile is unchanged.
+- Two independent re-review rounds report no unresolved P0-P2 finding. A
+  separate simplicity review reports no dependency or scope drift.
 
 ## Forbidden scope
 

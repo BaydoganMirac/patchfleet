@@ -13,10 +13,10 @@ local installation.
 
 ## Current status
 
-Phase 1 observation is complete. Phase 2 now adds a durable local work queue,
-safe command receipts, and start/cancel control for Codex inside an explicitly
-selected Git worktree. Claude Code and Gemini CLI remain observation-only.
-Optional Cloud connectivity is not implemented yet.
+Phase 1 observation and Phase 2 durable local work control are complete. The
+local app queues work, writes safe terminal receipts, and starts/cancels Codex
+inside an explicitly selected Git worktree. Claude Code and Gemini CLI remain
+observation-only. Optional Cloud connectivity is not implemented yet.
 
 Start with [the documentation map](docs/README.md) before changing code.
 

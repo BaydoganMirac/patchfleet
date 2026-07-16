@@ -6,9 +6,10 @@ Updated: 2026-07-16
 
 ## Recommendation now
 
-Phase 1 and the initial team bootstrap are complete. Keep one coordinator, one
-bounded Builder, and one independent Reviewer for Phase 2. Start with durable
-local work intake; do not create a Cloud role until local control is useful.
+Phase 1 observation and Phase 2 durable local work control are complete. Return
+to one coordinator until the owner approves Phase 3. The next bounded team
+should begin with pairing, protocol, and security review; do not create a Cloud
+implementation role before that plan and trust boundary are approved.
 
 ## Initial team
 
@@ -49,7 +50,7 @@ If the files and tests now have stable ownership:
 
 ### Phase 3 and later: Cloud owner
 
-Only after local control is useful:
+With local control now useful, and only after the owner approves Phase 3:
 
 - Cloud agent: private repository only.
 - Protocol owner: public contract plus cross-repo contract tests.
@@ -79,22 +80,23 @@ Each delegated task should specify:
 
 ## Suggested next agent task
 
-Objective: implement the smallest durable local work-intake queue after its
-task card is approved.
+Objective: write the smallest Phase 3 pairing and sanitized-projection plan for
+owner approval; do not implement it yet.
 
 Owned scope:
 
-- one local WorkItem contract;
-- append-only queue events and a rebuildable projection;
-- create, list, and remove interactions;
-- restart recovery and idempotency checks.
+- pairing and revocation threat model;
+- outbound-only host authentication contract;
+- first allowlisted, path-free operational projection;
+- replay, expiry, schema-version, and receipt contract tests;
+- exact public/private repository ownership boundaries.
 
 Forbidden scope:
 
-- provider process launch or cancellation;
-- Cloud pairing, sync, or remote commands;
-- queue reordering, retries, or questions;
-- desktop packaging;
-- authentication and billing.
+- Cloud product code before plan approval;
+- remote shell or arbitrary provider commands;
+- auth, billing, notifications, teams, or packaging;
+- Claude Code or Gemini execution control;
+- source, prompt, transcript, diff, credential, or local-path upload.
 
-This starts only after the owner approves the Phase 2 task card.
+This starts only after the owner approves a Phase 3 plan and task card.

@@ -55,8 +55,9 @@ state files.
 
 ## Next up
 
-- None for foundation. Phase 1 provider observation is complete; Phase 2 begins
-  through a new owner-approved work-intake task card.
+- None for foundation. Phase 1 provider observation and Phase 2 local work
+  control are complete; the next milestone starts only through its own
+  owner-approved plan and state file.
 
 ## Blockers
 
