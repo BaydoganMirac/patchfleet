@@ -15,10 +15,19 @@ Last updated: 2026-07-16
   projection.
 - Accepted ADR 0014 for bounded Codex app-server control.
 - Approved Task cards 0009 and 0010.
+- Implemented Task 0009 exact version-one WorkItem, local command intent, and
+  terminal receipt contracts.
+- Added `enqueue_work` and revision-aware `remove_queued_work` through the one
+  serialized, fsynced `events.jsonl` writer.
+- Added the atomic, rebuildable local-only `work-items.json` projection with
+  oldest-first work items, monotonic revisions, and safe receipt history.
+- Covered restart replay, pending-request recovery, crash-tail repair,
+  corruption failure, stale and expired commands, concurrent duplicate
+  delivery, idempotency conflict, shared-log isolation, and privacy canaries.
 
 ## In progress
 
-- Task 0009 durable queue and command receipt implementation.
+- Independent Task 0009 review.
 
 ## Next up
 
@@ -41,4 +50,3 @@ Last updated: 2026-07-16
 - Codex is the sole Phase 2 execution provider.
 - Codex work is workspace-write with no approval escalation.
 - Cloud and generalized provider control remain deferred.
-
