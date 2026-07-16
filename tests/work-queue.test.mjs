@@ -262,6 +262,41 @@ test("a pending request expires terminally and terminal duplicates return its fi
   assert.equal(events.some((item) => item.type === "work.enqueued"), false);
 });
 
+test("expiry uses the clock after a command reaches the serialized writer", async () => {
+  const dataDir = await directory();
+  let clock = FIRST;
+  const blocker = enqueue({
+    intentId: "intent-writer-blocker",
+    idempotencyKey: "key-writer-blocker",
+    workItemId: "work-writer-blocker",
+  });
+  const queued = enqueue({
+    intentId: "intent-writer-queued",
+    idempotencyKey: "key-writer-queued",
+    workItemId: "work-writer-queued",
+    expiresAt: SECOND,
+  });
+
+  const blockingResult = applyWorkCommand(blocker, { dataDir, now: () => clock });
+  const queuedResult = applyWorkCommand(queued, { dataDir, now: () => clock });
+  clock = SECOND;
+
+  assert.equal((await blockingResult).outcome, "applied");
+  const expired = await queuedResult;
+  assert.deepEqual([expired.outcome, expired.reasonCode], ["expired", "COMMAND_EXPIRED"]);
+  assert.deepEqual(
+    await applyWorkCommand(queued, {
+      dataDir,
+      now: () => { throw new Error("terminal duplicate must not read the clock"); },
+    }),
+    expired,
+  );
+  assert.deepEqual(
+    (await readWorkProjection({ dataDir })).items.map((item) => item.workItemId),
+    ["work-writer-blocker"],
+  );
+});
+
 test("replay repairs a crash tail, rebuilds projection, and rejects middle corruption", async () => {
   const dataDir = await directory();
   await applyWorkCommand(enqueue(), { dataDir, now: () => FIRST });

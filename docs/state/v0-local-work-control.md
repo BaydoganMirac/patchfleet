@@ -28,6 +28,9 @@ Last updated: 2026-07-16
   fact, work-item identities cannot be reused after removal, receipt reasons
   are bound to command replay semantics, and missing, stale, or corrupt work
   projections self-heal from the valid canonical log.
+- Expiry is evaluated only after a command reaches the serialized writer;
+  queued commands cannot apply with a stale pre-queue clock sample, while
+  terminal duplicates still return the original receipt unchanged.
 
 ## In progress
 
