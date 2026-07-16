@@ -17,3 +17,5 @@ supersedes the old one.
 | [0010](0010-supported-provider-observation-surfaces.md) | Accepted | Use supported Claude JSON and opt-in Gemini hooks behind a minimal lifecycle ingress |
 | [0011](0011-multi-provider-observation-projection.md) | Accepted | Project the three provider observations together before adding Gemini hook ingress |
 | [0012](0012-gemini-native-extension-lifecycle-inbox.md) | Accepted | Use Gemini's native extension lifecycle and a sanitized inbox before the single writer |
+| [0013](0013-local-work-intake-shares-the-canonical-event-log.md) | Accepted | Keep work intake and command receipts in the canonical local event log |
+| [0014](0014-codex-control-uses-a-bounded-app-server-session.md) | Accepted | Start and cancel Codex through a bounded app-server session |

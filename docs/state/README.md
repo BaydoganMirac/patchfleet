@@ -10,9 +10,11 @@
 | V0 Gemini CLI observation | Done | 2026-07-16 | [v0-gemini-observation.md](v0-gemini-observation.md) |
 | V0 provider production integration | Done | 2026-07-16 | [v0-provider-integration.md](v0-provider-integration.md) |
 | V0 Gemini lifecycle ingress | Done | 2026-07-16 | [v0-gemini-lifecycle-ingress.md](v0-gemini-lifecycle-ingress.md) |
+| V0 local work control | In progress | 2026-07-16 | [v0-local-work-control.md](v0-local-work-control.md) |
 
-Phase 1 local observation is complete. Phase 2 begins only through a new
-owner-approved work-intake task card.
+Phase 1 local observation is complete. Owner-approved Phase 2 implements the
+durable local queue and one proven Codex start/cancel loop; Cloud remains
+deferred.
 
 State files are resumable handoffs. Update the relevant file whenever a work
 session changes implementation status, blockers, decisions, or next steps.
