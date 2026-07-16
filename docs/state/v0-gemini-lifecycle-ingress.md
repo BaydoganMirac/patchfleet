@@ -1,6 +1,6 @@
 # V0 Gemini lifecycle ingress
 
-Status: In progress
+Status: Builder complete; review pending
 
 Last updated: 2026-07-16
 
@@ -23,16 +23,33 @@ extension or user setting has been changed.
 - Drafted approval-gated
   [Task card 0008](../plans/0008-gemini-native-extension-lifecycle-ingress.md).
 - Owner approved ADR 0012 and Task card 0008 on 2026-07-16.
+- Added the native `patchfleet-gemini` linked extension with exactly
+  `SessionStart`, `BeforeAgent`, and `AfterAgent` hooks.
+- Added a bounded fail-open hook that emits only `{}` and writes only the
+  validated five-field signal to private atomic inbox files.
+- Added a bounded JSON extension-status probe; blank, empty, missing, and
+  inactive results remain honest setup-required states.
+- Drained valid signals during manual refresh through the existing serialized
+  event writer with runtime revalidation, exact-signal idempotency, durable
+  cleanup, nullable creation time, and deterministic 20-session retention.
+- Preserved current Gemini hook sessions only while the extension is active;
+  missing setup clears current Gemini sessions without changing Codex, Claude,
+  or immutable event history.
+- Proved `AfterAgent` never creates `session.terminal` or `terminalAt`.
+- Documented native link, restart, status, and uninstall steps without changing
+  any real Gemini extension or user setting.
+- `npm test` passed: 83 tests, 0 failures.
+- `npm run build` passed.
+- `git diff --check` passed.
 
 ## In progress
 
-- Builder implementation of the approved extension, inbox, and manual-refresh
-  ingestion design.
+- Independent review of the stable Builder commit.
 
 ## Next up
 
-1. Complete the Builder implementation and local commit.
-2. Start the independent Reviewer only after the Builder commit exists.
+1. Start the independent Reviewer after the Builder commit exists.
+2. Resolve any P0-P2 review finding in a focused follow-up commit.
 3. Let the owner perform the first real extension link/uninstall smoke after
    reviewed code exists.
 
@@ -62,3 +79,7 @@ extension or user setting has been changed.
 - Official and installed Gemini 0.43.0 references confirmed hook stdin/stdout,
   native extension lifecycle, exact lifecycle matchers, and source-link
   behavior.
+- Builder completed the approved extension, inbox, adapter-status, serialized
+  persistence, retention, setup-clearing, documentation, and focused checks.
+- No real extension lifecycle command ran and no Gemini settings file was read
+  or changed.

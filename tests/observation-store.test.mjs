@@ -10,6 +10,7 @@ import {
 } from "../lib/domain/observation.mjs";
 import {
   appendEvents,
+  persistGeminiLifecycleSignal,
   persistObservation,
   projectEvents,
   readProjection,
@@ -240,4 +241,82 @@ test("forbidden extra fields never enter the event log or projection", async () 
   assert.equal(stored.includes("prompt"), false);
   assert.equal(stored.includes("transcript"), false);
   assert.equal(stored.includes("cwd"), false);
+});
+
+test("Gemini lifecycle signals are idempotent, non-terminal, retained, and setup-scoped", async () => {
+  const dataDir = await directory();
+  await persistObservation(observation({ status: "running", terminalAt: null }), { dataDir });
+  await persistObservation(observation({
+    providerId: "gemini",
+    observedAt: SECOND,
+    sessions: [],
+  }), { dataDir });
+
+  for (const [status, observedAt] of [
+    ["unknown", SECOND],
+    ["running", THIRD],
+    ["completed", FOURTH],
+  ]) {
+    await persistGeminiLifecycleSignal({
+      schemaVersion: 1,
+      providerId: "gemini",
+      providerSessionId: "gemini-hook-session",
+      status,
+      observedAt,
+    }, { dataDir });
+  }
+
+  const beforeRetry = await replayEvents({ dataDir });
+  await persistGeminiLifecycleSignal({
+    schemaVersion: 1,
+    providerId: "gemini",
+    providerSessionId: "gemini-hook-session",
+    status: "completed",
+    observedAt: FOURTH,
+  }, { dataDir });
+  assert.equal((await replayEvents({ dataDir })).length, beforeRetry.length);
+
+  let projection = await readProjection({ dataDir });
+  const hookSession = provider(projection, "gemini").sessions[0];
+  assert.deepEqual(hookSession, {
+    providerSessionId: "gemini-hook-session",
+    status: "completed",
+    createdAt: null,
+    lastObservedAt: FOURTH,
+  });
+  assert.equal(
+    beforeRetry.some((item) => item.type === "session.terminal" && item.payload.providerId === "gemini"),
+    false,
+  );
+
+  for (let index = 0; index < 21; index += 1) {
+    await persistGeminiLifecycleSignal({
+      schemaVersion: 1,
+      providerId: "gemini",
+      providerSessionId: `retained-${String(index).padStart(2, "0")}`,
+      status: "running",
+      observedAt: new Date(Date.parse(FOURTH) + (index + 1) * 1_000).toISOString(),
+    }, { dataDir });
+  }
+  projection = await readProjection({ dataDir });
+  assert.equal(provider(projection, "gemini").sessions.length, 20);
+  assert.equal(provider(projection, "gemini").sessions.some((item) => item.providerSessionId === "retained-20"), true);
+  assert.equal(provider(projection, "gemini").sessions.some((item) => item.providerSessionId === "gemini-hook-session"), false);
+
+  projection = await persistObservation(observation({
+    providerId: "gemini",
+    observedAt: new Date(Date.parse(FOURTH) + 30_000).toISOString(),
+    sessions: [],
+  }), { dataDir, preserveSessions: true });
+  assert.equal(provider(projection, "gemini").sessions.length, 20);
+
+  projection = await persistObservation(observation({
+    providerId: "gemini",
+    observedAt: new Date(Date.parse(FOURTH) + 31_000).toISOString(),
+    state: "degraded",
+    error: safeObservationError("gemini", "GEMINI_HOOK_SETUP_REQUIRED"),
+    sessions: [],
+  }), { dataDir });
+  assert.deepEqual(provider(projection, "gemini").sessions, []);
+  assert.equal(provider(projection, "codex").sessions[0].status, "running");
 });

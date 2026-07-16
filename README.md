@@ -13,9 +13,9 @@ local installation.
 
 ## Current status
 
-The local console can probe Codex and persist a sanitized, read-only lifecycle
-snapshot through the supported app-server JSONL protocol. Provider control,
-Claude Code, Gemini CLI, and Cloud connectivity are not implemented yet.
+The local console observes Codex, Claude Code, and Gemini CLI through their
+supported structured surfaces and persists one sanitized, rebuildable local
+projection. Provider control and Cloud connectivity are not implemented yet.
 
 Start with [the documentation map](docs/README.md) before changing code.
 
@@ -25,9 +25,21 @@ Start with [the documentation map](docs/README.md) before changing code.
     npm run dev
 
 The local app runs at http://127.0.0.1:3000 and accepts only `localhost` or
-`127.0.0.1` Host values. Use **Refresh Codex** to store up to 20 recent
-interactive sessions. Patchfleet does not read Codex private files or retain
-prompts, titles, paths, transcripts, tools, diffs, reasoning, or tokens.
+`127.0.0.1` Host values. Use the manual refresh to store up to 20 recent
+sessions per provider. Patchfleet does not retain prompts, titles, paths,
+transcripts, tools, diffs, reasoning, or tokens.
+
+Gemini lifecycle observation is opt-in. From the Patchfleet checkout, let
+Gemini CLI link the checked-in extension, then restart Gemini:
+
+    gemini extensions link extensions/patchfleet-gemini
+    gemini extensions list --output-format json
+
+Future `SessionStart`, `BeforeAgent`, and `AfterAgent` hooks enter the console
+on manual refresh. Gemini CLI owns consent and extension state; Patchfleet does
+not edit Gemini settings. Remove the extension with:
+
+    gemini extensions uninstall patchfleet-gemini
 
 To verify the boundary:
 

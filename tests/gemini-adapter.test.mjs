@@ -7,6 +7,7 @@ import {
   decodeGeminiHook,
   observeGemini,
   probeGemini,
+  probeGeminiExtension,
 } from "../lib/providers/gemini.mjs";
 import { validateProviderLifecycleSignal } from "../lib/domain/provider-lifecycle-signal.mjs";
 import { assertProviderObservation } from "./support/provider-observation-conformance.mjs";
@@ -22,17 +23,23 @@ const GEMINI_ERRORS = Object.freeze({
 });
 const CANARY = "CANARY_SECRET_PAYLOAD";
 
-async function fakeGemini(mode) {
+async function fakeGemini(mode, extensionOutput = "[]") {
   const directory = await mkdtemp(join(tmpdir(), "patchfleet-gemini-"));
   const command = join(directory, "gemini");
   const marker = join(directory, "argv");
   const source = `#!/usr/bin/env node
 const fs = require("node:fs");
-fs.appendFileSync(${JSON.stringify(marker)}, JSON.stringify(process.argv.slice(2)) + "\\n");
-if (${JSON.stringify(mode)} === "timeout") setInterval(() => {}, 1000);
-else if (${JSON.stringify(mode)} === "failed") process.exit(2);
-else if (${JSON.stringify(mode)} === "malformed") console.log("Gemini CLI version unknown");
-else console.log("0.43.0");
+const args = process.argv.slice(2);
+fs.appendFileSync(${JSON.stringify(marker)}, JSON.stringify(args) + "\\n");
+if (args[0] === "--version") {
+  if (${JSON.stringify(mode)} === "timeout") setInterval(() => {}, 1000);
+  else if (${JSON.stringify(mode)} === "failed") process.exit(2);
+  else if (${JSON.stringify(mode)} === "malformed") console.log("Gemini CLI version unknown");
+  else console.log("0.43.0");
+} else if (${JSON.stringify(mode)} === "extension-timeout") setInterval(() => {}, 1000);
+else if (${JSON.stringify(mode)} === "extension-failed") process.exit(2);
+else if (${JSON.stringify(mode)} === "extension-malformed") console.log("{");
+else if (${JSON.stringify(mode)} !== "extension-blank") console.log(${JSON.stringify(extensionOutput)});
 `;
   await writeFile(command, source, "utf8");
   await chmod(command, 0o700);
@@ -59,6 +66,38 @@ test("probe uses only a bounded version command", async (t) => {
   }
 });
 
+test("extension status probe is bounded and uses structured output", async (t) => {
+  const missing = await probeGeminiExtension({
+    command: `missing-gemini-${process.pid}`,
+    timeoutMs: 100,
+  });
+  assert.deepEqual(missing, { state: "unavailable", code: "GEMINI_NOT_FOUND" });
+
+  for (const [name, mode, output, expected] of [
+    ["active", "valid", JSON.stringify([{ name: "patchfleet-gemini", isActive: true, path: CANARY }]), { state: "active" }],
+    ["missing", "valid", JSON.stringify([{ name: "other", isActive: true }]), { state: "setup-required" }],
+    ["inactive", "valid", JSON.stringify([{ name: "patchfleet-gemini", isActive: false }]), { state: "setup-required" }],
+    ["empty", "valid", "[]", { state: "setup-required" }],
+    ["blank", "extension-blank", "", { state: "setup-required" }],
+    ["malformed", "extension-malformed", "", { state: "degraded", code: "GEMINI_PROBE_FAILED" }],
+    ["failed", "extension-failed", "", { state: "degraded", code: "GEMINI_PROBE_FAILED" }],
+    ["timeout", "extension-timeout", "", { state: "degraded", code: "GEMINI_PROBE_TIMEOUT" }],
+  ]) {
+    await t.test(name, async () => {
+      const { command, marker } = await fakeGemini(mode, output);
+      const result = await probeGeminiExtension({ command, timeoutMs: name === "timeout" ? 500 : 2_000 });
+      assert.deepEqual(result, expected);
+      assert.equal(JSON.stringify(result).includes(CANARY), false);
+      if (name !== "timeout") {
+        assert.equal(
+          await readFile(marker, "utf8"),
+          '["extensions","list","--output-format","json"]\n',
+        );
+      }
+    });
+  }
+});
+
 test("observation reports unavailable or explicit hook setup required", async () => {
   const unavailable = await observeGemini({
     command: `missing-gemini-${process.pid}`,
@@ -78,7 +117,22 @@ test("observation reports unavailable or explicit hook setup required", async ()
     explicitLiveStatus: false,
   });
   assert.deepEqual(setupRequired.sessions, []);
-  assert.equal(await readFile(marker, "utf8"), '["--version"]\n');
+  assert.equal(
+    await readFile(marker, "utf8"),
+    '["--version"]\n["extensions","list","--output-format","json"]\n',
+  );
+
+  const activeCommand = await fakeGemini("valid", JSON.stringify([
+    { name: "patchfleet-gemini", isActive: true, path: CANARY, settings: CANARY },
+  ]));
+  const active = await observeGemini({ command: activeCommand.command, timeoutMs: 2_000, now: () => NOW });
+  assertProviderObservation(active, GEMINI_PROVIDER, GEMINI_ERRORS);
+  assert.equal(active.provider.state, "available");
+  assert.deepEqual(active.provider.capabilities, {
+    recentObservation: true,
+    explicitLiveStatus: true,
+  });
+  assert.equal(JSON.stringify(active).includes(CANARY), false);
 });
 
 test("hook decoder maps only explicit lifecycle events", () => {

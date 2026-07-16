@@ -1,0 +1,40 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "name": "patchfleet-lifecycle",
+            "type": "command",
+            "command": "node \"${extensionPath}${/}hook.mjs\"",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "BeforeAgent": [
+      {
+        "hooks": [
+          {
+            "name": "patchfleet-lifecycle",
+            "type": "command",
+            "command": "node \"${extensionPath}${/}hook.mjs\"",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "AfterAgent": [
+      {
+        "hooks": [
+          {
+            "name": "patchfleet-lifecycle",
+            "type": "command",
+            "command": "node \"${extensionPath}${/}hook.mjs\"",
+            "timeout": 5000
+          }
+        ]
+      }
+    ]
+  }
+}

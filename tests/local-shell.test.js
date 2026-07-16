@@ -134,6 +134,7 @@ else console.log(JSON.stringify([{
 `;
   const geminiSource = `#!/usr/bin/env node
 if (process.argv.includes("--version")) console.log("0.43.0");
+else if (process.argv[2] === "extensions") console.log("[]");
 else process.exit(1);
 `;
   await writeFile(codex, codexSource, "utf8");
