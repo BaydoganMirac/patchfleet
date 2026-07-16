@@ -1,6 +1,6 @@
 # ADR 0012: Gemini native extension with sanitized lifecycle inbox
 
-Status: Proposed
+Status: Accepted
 
 Date: 2026-07-16
 

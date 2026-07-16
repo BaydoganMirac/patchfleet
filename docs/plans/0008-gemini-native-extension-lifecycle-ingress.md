@@ -1,6 +1,6 @@
 # Task card 0008: Gemini native extension lifecycle ingress
 
-Status: Draft - owner approval required
+Status: Approved
 
 Coordinator: Patchfleet coordinator
 
@@ -9,6 +9,8 @@ Builder: one integration owner after approval
 Reviewer: one independent reviewer after the builder commit
 
 Updated: 2026-07-16
+
+Approved by owner: 2026-07-16
 
 Depends on: Task cards 0004, 0006, and 0007 completed and independently reviewed
 
@@ -29,9 +31,9 @@ existing event log and projection, after which the dashboard shows the Gemini
 session without exposing any raw hook field. Missing or inactive setup remains
 an honest degraded provider state and does not affect Codex or Claude data.
 
-## Approved design after owner acceptance
+## Approved design
 
-- Use the proposed [ADR 0012](../decisions/0012-gemini-native-extension-lifecycle-inbox.md).
+- Use accepted [ADR 0012](../decisions/0012-gemini-native-extension-lifecycle-inbox.md).
 - Register only `SessionStart`, `BeforeAgent`, and `AfterAgent` in a checked-in
   `patchfleet-gemini` extension.
 - Reuse the existing decoder; do not duplicate its allowlist.
@@ -76,7 +78,7 @@ and lock files are read-only.
 - [ADR 0008](../decisions/0008-browser-originated-local-request-boundary.md);
 - [ADR 0010](../decisions/0010-supported-provider-observation-surfaces.md);
 - [ADR 0011](../decisions/0011-multi-provider-observation-projection.md);
-- proposed [ADR 0012](../decisions/0012-gemini-native-extension-lifecycle-inbox.md);
+- accepted [ADR 0012](../decisions/0012-gemini-native-extension-lifecycle-inbox.md);
 - [Task card 0006](0006-gemini-cli-hook-observation.md);
 - [Task card 0007](0007-multi-provider-production-observation.md);
 - `.agents/skills/provider-adapters/SKILL.md`;
