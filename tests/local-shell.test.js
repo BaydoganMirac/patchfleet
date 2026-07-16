@@ -98,11 +98,13 @@ async function stopNext(child) {
   await exited;
 }
 
-async function fakeCodex() {
+async function fakeProviders() {
   const binDir = await mkdtemp(join(tmpdir(), "patchfleet-web-bin-"));
-  const command = join(binDir, "codex");
+  const codex = join(binDir, "codex");
+  const claude = join(binDir, "claude");
+  const gemini = join(binDir, "gemini");
   const marker = join(binDir, "marker");
-  const source = `#!/usr/bin/env node
+  const codexSource = `#!/usr/bin/env node
 const fs = require("node:fs");
 const readline = require("node:readline");
 const marker = ${JSON.stringify(marker)};
@@ -123,8 +125,23 @@ else {
   });
 }
 `;
-  await writeFile(command, source, "utf8");
-  await chmod(command, 0o700);
+  const claudeSource = `#!/usr/bin/env node
+if (process.argv.includes("--version")) console.log("2.1.170 (Claude Code)");
+else console.log(JSON.stringify([{
+  id: "claude-session-id", state: "working", startedAt: 1784196000000,
+  prompt: "CLAUDE_CANARY_PROMPT", cwd: "/private/CLAUDE_CANARY_PATH"
+}]));
+`;
+  const geminiSource = `#!/usr/bin/env node
+if (process.argv.includes("--version")) console.log("0.43.0");
+else process.exit(1);
+`;
+  await writeFile(codex, codexSource, "utf8");
+  await writeFile(claude, claudeSource, "utf8");
+  await writeFile(gemini, geminiSource, "utf8");
+  await chmod(codex, 0o700);
+  await chmod(claude, 0o700);
+  await chmod(gemini, 0o700);
   return { binDir, marker };
 }
 
@@ -162,13 +179,13 @@ test("local shell enforces the browser boundary and renders durable observation 
   assert.match(scripts.start, /--hostname 127\.0\.0\.1/);
 
   const dataDir = await mkdtemp(join(tmpdir(), "patchfleet-web-data-"));
-  const { binDir, marker } = await fakeCodex();
+  const { binDir, marker } = await fakeProviders();
   let server = await startNext(dataDir, binDir);
 
   try {
     const initial = await fetch(server.port);
     assert.equal(initial.statusCode, 200);
-    assert.match(initial.body, /Codex has not been observed/);
+    assert.match(initial.body, /Providers have not been observed/);
     assert.match(initial.body, /method="post"/);
     assert.match(initial.body, /action="\/api\/observe"/);
 
@@ -210,12 +227,22 @@ test("local shell enforces the browser boundary and renders durable observation 
     }
     assert.equal(await markerText(marker), "start\nstop\n");
     const stored = `${await readFile(join(dataDir, "events.jsonl"), "utf8")}${await readFile(join(dataDir, "observation.json"), "utf8")}`;
-    for (const canary of ["CANARY_PROMPT", "CANARY_TRANSCRIPT", "/private/CANARY_PATH"]) {
+    for (const canary of [
+      "CANARY_PROMPT",
+      "CANARY_TRANSCRIPT",
+      "/private/CANARY_PATH",
+      "CLAUDE_CANARY_PROMPT",
+      "/private/CLAUDE_CANARY_PATH",
+    ]) {
       assert.equal(stored.includes(canary), false, canary);
     }
 
     const populated = await fetch(server.port);
     assert.match(populated.body, /web-sess…n-id/);
+    assert.match(populated.body, /Claude Code/);
+    assert.match(populated.body, /job:clau…n-id/);
+    assert.match(populated.body, /Gemini CLI/);
+    assert.match(populated.body, /Gemini CLI hook setup is required/);
     assert.match(populated.body, />running</);
     assert.match(populated.body, /remains available after restart/);
 

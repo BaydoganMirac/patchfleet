@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { refreshCodexObservation } from "@/lib/runtime/observe.mjs";
+import { refreshObservations } from "@/lib/runtime/observe.mjs";
 
 function allowedHost(host: string | null) {
   const match = /^(?:localhost|127\.0\.0\.1)(?::([0-9]+))?$/i.exec(host ?? "");
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
   if (!allowedRequest(request)) return new NextResponse("Forbidden", { status: 403 });
 
   try {
-    await refreshCodexObservation();
+    await refreshObservations();
     return NextResponse.redirect(new URL("/", request.headers.get("origin")!), 303);
   } catch {
     return new NextResponse("Local observation failed", { status: 500 });

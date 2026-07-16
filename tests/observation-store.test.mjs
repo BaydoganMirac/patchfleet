@@ -4,6 +4,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import {
+  normalizeObservation,
+  safeObservationError,
+  validateProjection,
+} from "../lib/domain/observation.mjs";
+import {
   appendEvents,
   persistObservation,
   projectEvents,
@@ -17,25 +22,38 @@ const FIRST = "2026-07-15T12:00:00.000Z";
 const SECOND = "2026-07-15T12:05:00.000Z";
 const THIRD = "2026-07-15T12:10:00.000Z";
 const FOURTH = "2026-07-15T12:15:00.000Z";
+const PROVIDERS = {
+  codex: "Codex",
+  claude: "Claude Code",
+  gemini: "Gemini CLI",
+};
 
 function observation({
+  providerId = "codex",
   observedAt = FIRST,
   status = "completed",
   terminalAt = "2026-07-15T11:59:00.000Z",
+  state = "available",
+  error,
+  sessions,
   extra = {},
 } = {}) {
   return {
     schemaVersion: 1,
     provider: {
-      id: "codex",
-      displayName: "Codex",
-      state: "available",
+      id: providerId,
+      displayName: PROVIDERS[providerId],
+      state,
       version: "1.2.3",
-      capabilities: { recentObservation: true, explicitLiveStatus: true },
+      capabilities: {
+        recentObservation: state === "available",
+        explicitLiveStatus: state === "available",
+      },
+      ...(error ? { error } : {}),
       ...extra,
     },
     observedAt,
-    sessions: [
+    sessions: sessions ?? [
       {
         providerSessionId: "session-1",
         status,
@@ -47,6 +65,10 @@ function observation({
     ],
     ...extra,
   };
+}
+
+function provider(projection, providerId = "codex") {
+  return projection.observations.find((item) => item.provider.id === providerId);
 }
 
 async function directory() {
@@ -68,8 +90,8 @@ test("append, replay, deterministic rebuild, and atomic projection replacement",
     observation({ observedAt: SECOND, status: "running", terminalAt: undefined }),
     { dataDir },
   );
-  assert.equal(second.observedAt, SECOND);
-  assert.equal((await readProjection({ dataDir })).sessions[0].status, "running");
+  assert.equal(provider(second).observedAt, SECOND);
+  assert.equal(provider(await readProjection({ dataDir })).sessions[0].status, "running");
   assert.deepEqual((await readdir(dataDir)).filter((name) => name.endsWith(".tmp")), []);
 });
 
@@ -107,10 +129,11 @@ test("middle corruption fails closed", async () => {
 test("only consecutive identical terminal observations are deduplicated", async () => {
   const dataDir = await directory();
   await persistObservation(observation(), { dataDir });
+  await persistObservation(observation({ providerId: "claude" }), { dataDir });
   await persistObservation(observation({ observedAt: SECOND }), { dataDir });
   assert.equal(
     (await replayEvents({ dataDir })).filter((event) => event.type === "session.terminal").length,
-    1,
+    2,
   );
 
   await persistObservation(observation({ observedAt: THIRD, status: "running", terminalAt: null }), {
@@ -118,8 +141,85 @@ test("only consecutive identical terminal observations are deduplicated", async 
   });
   await persistObservation(observation({ observedAt: FOURTH }), { dataDir });
   const events = await replayEvents({ dataDir });
-  assert.equal(events.filter((event) => event.type === "session.terminal").length, 2);
-  assert.equal(events.filter((event) => event.type === "session.observed").length, 4);
+  assert.equal(events.filter((event) => event.type === "session.terminal").length, 3);
+  assert.equal(events.filter((event) => event.type === "session.observed").length, 5);
+});
+
+test("fixed providers normalize with provider-scoped safe errors", () => {
+  for (const [providerId, code] of [
+    ["codex", "CODEX_NOT_FOUND"],
+    ["claude", "CLAUDE_NOT_FOUND"],
+    ["gemini", "GEMINI_HOOK_SETUP_REQUIRED"],
+  ]) {
+    const error = safeObservationError(providerId, code);
+    const normalized = normalizeObservation(observation({
+      providerId,
+      state: providerId === "codex" || providerId === "claude" ? "unavailable" : "degraded",
+      error: { code, message: "CANARY_UNSAFE_ERROR" },
+      sessions: [],
+    }));
+    assert.deepEqual(normalized.provider.error, error);
+    assert.equal(normalized.provider.displayName, PROVIDERS[providerId]);
+  }
+
+  assert.throws(() => safeObservationError("claude", "CODEX_NOT_FOUND"));
+  assert.throws(() => normalizeObservation({
+    ...observation(),
+    provider: { ...observation().provider, displayName: "CANARY_PROVIDER" },
+  }));
+});
+
+test("provider sessions, failures, replay, and ordering remain isolated", async () => {
+  const dataDir = await directory();
+  await persistObservation(observation(), { dataDir });
+  await persistObservation(observation({
+    providerId: "claude",
+    observedAt: SECOND,
+    status: "running",
+    terminalAt: null,
+  }), { dataDir });
+  const projection = await persistObservation(observation({
+    providerId: "gemini",
+    observedAt: THIRD,
+    state: "degraded",
+    error: safeObservationError("gemini", "GEMINI_HOOK_SETUP_REQUIRED"),
+    sessions: [],
+  }), { dataDir });
+
+  assert.deepEqual(
+    projection.observations.map((item) => item.provider.id),
+    ["codex", "claude", "gemini"],
+  );
+  assert.equal(provider(projection, "codex").sessions[0].status, "completed");
+  assert.equal(provider(projection, "claude").sessions[0].status, "running");
+  assert.equal(provider(projection, "gemini").provider.error.code, "GEMINI_HOOK_SETUP_REQUIRED");
+  assert.deepEqual(projectEvents(await replayEvents({ dataDir })), projection);
+  assert.deepEqual(await rebuildProjection({ dataDir }), projection);
+  assert.deepEqual(await readProjection({ dataDir }), projection);
+
+  const isolated = await persistObservation(observation({
+    providerId: "claude",
+    observedAt: FOURTH,
+    state: "unavailable",
+    error: safeObservationError("claude", "CLAUDE_NOT_FOUND"),
+    sessions: [],
+  }), { dataDir });
+  assert.equal(provider(isolated, "codex").sessions[0].status, "completed");
+  assert.equal(provider(isolated, "claude").sessions.length, 0);
+});
+
+test("legacy Codex projection is wrapped and duplicate providers are rejected", async () => {
+  const dataDir = await directory();
+  const legacy = normalizeObservation(observation());
+  await writeFile(join(dataDir, "observation.json"), `${JSON.stringify(legacy)}\n`, "utf8");
+  assert.deepEqual(await readProjection({ dataDir }), {
+    schemaVersion: 2,
+    observations: [legacy],
+  });
+  assert.throws(() => validateProjection({
+    schemaVersion: 2,
+    observations: [legacy, legacy],
+  }));
 });
 
 test("forbidden extra fields never enter the event log or projection", async () => {
@@ -128,6 +228,10 @@ test("forbidden extra fields never enter the event log or projection", async () 
   await persistObservation(observation({ extra: { prompt: canary, cwd: canary, transcript: canary } }), {
     dataDir,
   });
+  await persistObservation(observation({
+    providerId: "claude",
+    extra: { prompt: canary, cwd: canary, transcript: canary },
+  }), { dataDir });
   const stored = `${await readFile(join(dataDir, "events.jsonl"), "utf8")}${await readFile(
     join(dataDir, "observation.json"),
     "utf8",

@@ -1,6 +1,6 @@
 # V0 provider production integration
 
-Status: In progress
+Status: In review
 
 Last updated: 2026-07-16
 
@@ -20,16 +20,26 @@ separate later task.
 - Recorded [ADR 0011](../decisions/0011-multi-provider-observation-projection.md).
 - Drafted and owner-approved
   [Task card 0007](../plans/0007-multi-provider-production-observation.md).
+- Generalized the normalized observation boundary and safe error catalog to
+  the three fixed provider identities without changing adapter output shapes.
+- Preserved event schema version 1 while scoping replay, terminal
+  deduplication, and equal native session ids by provider.
+- Added projection schema version 2 with deterministic Codex, Claude Code,
+  Gemini CLI ordering and legacy Codex projection compatibility.
+- Connected one manual refresh and the local dashboard to all three provider
+  observations without adding hooks, polling, controls, or dependencies.
+- Added multi-provider durability, isolation, compatibility, field-stripping,
+  browser-boundary, dashboard, and fake-CLI refresh coverage.
+- Verified `npm test` (71 tests), `npm run build`, and `git diff --check`.
 
 ## In progress
 
-- Integration-owner implementation of multi-provider validation, persistence,
-  refresh, projection, dashboard, and compatibility checks.
+- Independent review of the focused implementation commit.
 
 ## Next up
 
-1. Produce one focused Builder commit and exact test/build evidence.
-2. Run independent review and close any P0-P2 findings.
+1. Close any independent-review P0-P2 findings.
+2. Mark Task 0007 and this state complete after the final verification.
 3. Draft Gemini hook setup and secure ingress only after Task 0007 completes.
 
 ## Blockers
@@ -55,3 +65,7 @@ separate later task.
 - Graph trace confirmed the smallest production seam is route -> refresh ->
   event writer -> projection -> dashboard.
 - Owner authorized the next task; ADR 0011 and Task card 0007 were prepared.
+- Integrated the three fixed adapters through the existing single-writer
+  runtime and projection boundary.
+- Full verification passed: `npm test` (71/71), `npm run build`, and
+  `git diff --check`.

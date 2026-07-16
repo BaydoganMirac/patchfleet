@@ -5,13 +5,16 @@ export const dynamic = "force-dynamic";
 type Session = {
   providerSessionId: string;
   status: "completed" | "failed" | "interrupted" | "running" | "unknown";
-  createdAt: string;
+  createdAt: string | null;
   lastObservedAt: string;
   terminalAt?: string;
 };
 
-type Projection = {
+type Observation = {
+  schemaVersion: 1;
   provider: {
+    id: "codex" | "claude" | "gemini";
+    displayName: "Codex" | "Claude Code" | "Gemini CLI";
     state: "available" | "degraded" | "unavailable";
     version: string | null;
     capabilities: { recentObservation: boolean; explicitLiveStatus: boolean };
@@ -19,6 +22,11 @@ type Projection = {
   };
   observedAt: string;
   sessions: Session[];
+};
+
+type Projection = {
+  schemaVersion: 2;
+  observations: Observation[];
 };
 
 function time(value: string) {
@@ -31,7 +39,7 @@ function shortId(value: string) {
   return value.length > 13 ? `${value.slice(0, 8)}…${value.slice(-4)}` : value;
 }
 
-function providerLabel(state: Projection["provider"]["state"]) {
+function providerLabel(state: Observation["provider"]["state"]) {
   if (state === "available") return "Available";
   if (state === "degraded") return "Degraded";
   return "Unavailable";
@@ -55,11 +63,11 @@ export default async function Home() {
           <p className="eyebrow">Local-only console</p>
           <h1>Patchfleet</h1>
           <p className="summary">
-            Honest, restart-safe lifecycle metadata from the supported Codex app-server.
+            Honest, restart-safe lifecycle metadata from supported provider surfaces.
           </p>
         </div>
         <form action="/api/observe" method="post">
-          <button type="submit">Refresh Codex</button>
+          <button type="submit">Refresh providers</button>
         </form>
       </header>
 
@@ -70,8 +78,8 @@ export default async function Home() {
         </section>
       ) : result.projection === null ? (
         <section className="notice" aria-labelledby="never-observed">
-          <h2 id="never-observed">Codex has not been observed</h2>
-          <p>Refresh once to check the installed CLI and store a local snapshot.</p>
+          <h2 id="never-observed">Providers have not been observed</h2>
+          <p>Refresh once to check the installed CLIs and store local snapshots.</p>
         </section>
       ) : (
         <Dashboard projection={result.projection} />
@@ -81,14 +89,22 @@ export default async function Home() {
 }
 
 function Dashboard({ projection }: { projection: Projection }) {
-  const { provider, sessions } = projection;
+  return projection.observations.map((observation) => (
+    <ProviderObservation key={observation.provider.id} observation={observation} />
+  ));
+}
+
+function ProviderObservation({ observation }: { observation: Observation }) {
+  const { provider, sessions } = observation;
+  const providerTitle = `${provider.id}-provider-title`;
+  const sessionsTitle = `${provider.id}-sessions-title`;
   return (
     <>
-      <section className="provider" aria-labelledby="provider-title">
+      <section className="provider" aria-labelledby={providerTitle}>
         <div className="section-heading">
           <div>
             <p className="eyebrow">Provider</p>
-            <h2 id="provider-title">Codex</h2>
+            <h2 id={providerTitle}>{provider.displayName}</h2>
           </div>
           <span className={`badge ${provider.state}`}>{providerLabel(provider.state)}</span>
         </div>
@@ -112,16 +128,16 @@ function Dashboard({ projection }: { projection: Projection }) {
           </p>
         ) : null}
         <p className="snapshot">
-          Stored local snapshot from <time dateTime={projection.observedAt}>{time(projection.observedAt)}</time>.
+          Stored local snapshot from <time dateTime={observation.observedAt}>{time(observation.observedAt)}</time>.
           It is not a live feed and remains available after restart.
         </p>
       </section>
 
-      <section aria-labelledby="sessions-title">
+      <section aria-labelledby={sessionsTitle}>
         <div className="section-heading">
           <div>
             <p className="eyebrow">Most recent</p>
-            <h2 id="sessions-title">Codex sessions</h2>
+            <h2 id={sessionsTitle}>{provider.displayName} sessions</h2>
           </div>
           <span className="count">{sessions.length} / 20</span>
         </div>
@@ -134,7 +150,11 @@ function Dashboard({ projection }: { projection: Projection }) {
                 <div>
                   <code>{shortId(session.providerSessionId)}</code>
                   <p>
-                    Created <time dateTime={session.createdAt}>{time(session.createdAt)}</time>
+                    {session.createdAt ? (
+                      <>Created <time dateTime={session.createdAt}>{time(session.createdAt)}</time></>
+                    ) : (
+                      "Creation time not supplied"
+                    )}
                   </p>
                 </div>
                 <div className="session-state">

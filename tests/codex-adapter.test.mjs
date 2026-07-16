@@ -21,7 +21,7 @@ const CODEX_ERRORS = Object.freeze(Object.fromEntries([
   "CODEX_PROTOCOL_METHOD_ERROR",
   "CODEX_SYSTEM_ERROR",
   "CODEX_VERSION_MALFORMED",
-].map((code) => [code, safeObservationError(code).message])));
+].map((code) => [code, safeObservationError("codex", code).message])));
 const CANARIES = [
   "CANARY_PROMPT",
   "CANARY_TRANSCRIPT",
