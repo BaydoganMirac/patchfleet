@@ -1,6 +1,6 @@
 # Task card 0007: Multi-provider production observation
 
-Status: Approved
+Status: Completed
 
 Coordinator: Patchfleet coordinator
 
@@ -11,6 +11,10 @@ Reviewer: one independent reviewer after the builder commit
 Updated: 2026-07-16
 
 Approved by owner: 2026-07-16
+
+Completed: 2026-07-16
+
+Independent review: Passed with no unresolved P0-P2 findings
 
 Depends on: Task cards 0003-0006 completed and independently reviewed
 

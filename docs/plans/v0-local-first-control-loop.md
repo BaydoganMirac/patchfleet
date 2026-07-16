@@ -20,15 +20,14 @@ supported-surface discovery is complete. [ADR 0010](../decisions/0010-supported-
 [Task card 0006](0006-gemini-cli-hook-observation.md) define a contract-first
 sequence: integration-owner bridge, then disjoint Claude and Gemini adapter
 proofs. Task cards 0004, 0005, and 0006 are complete and independently
-reviewed. Claude's
-sanitized nonempty real Agent View smoke validated the installed schema after a
-focused Unix-millisecond timestamp correction. The next approval gate is the
-production integration-owner slice; provider proofs remain outside production
-persistence and UI until that task is approved. The owner approved
+reviewed. Claude's sanitized nonempty real Agent View smoke validated the
+installed schema after a focused Unix-millisecond timestamp correction.
 [ADR 0011](../decisions/0011-multi-provider-observation-projection.md) and
-[Task card 0007](0007-multi-provider-production-observation.md): integrate the
-three pull/probe observations first, while keeping Gemini hook setup and secure
-lifecycle ingress as a separate task.
+[Task card 0007](0007-multi-provider-production-observation.md) are now also
+complete and independently reviewed: one manual refresh persists the three
+fixed pull/probe observations into a provider-scoped, rebuildable projection,
+and the dashboard renders all three without provider-native sensitive data.
+Gemini hook setup and secure lifecycle ingress remain a separate approval gate.
 
 ## Goal
 

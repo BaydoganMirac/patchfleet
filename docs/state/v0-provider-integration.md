@@ -1,6 +1,6 @@
 # V0 provider production integration
 
-Status: In review
+Status: Done
 
 Last updated: 2026-07-16
 
@@ -31,16 +31,17 @@ separate later task.
 - Added multi-provider durability, isolation, compatibility, field-stripping,
   browser-boundary, dashboard, and fake-CLI refresh coverage.
 - Verified `npm test` (71 tests), `npm run build`, and `git diff --check`.
+- Independent review passed with no unresolved P0-P2 findings, including a
+  direct legacy Codex version 1 event replay smoke.
 
 ## In progress
 
-- Independent review of the focused implementation commit.
+- None. Task card 0007 is complete.
 
 ## Next up
 
-1. Close any independent-review P0-P2 findings.
-2. Mark Task 0007 and this state complete after the final verification.
-3. Draft Gemini hook setup and secure ingress only after Task 0007 completes.
+1. Draft Gemini hook setup and secure single-writer lifecycle ingress as a
+   separate owner-approved task.
 
 ## Blockers
 
@@ -50,6 +51,16 @@ separate later task.
 
 - None for Task 0007. Gemini settings ownership and ingress transport are
   deliberately deferred.
+
+## Residual risks
+
+- An unexpected adapter exception outside the adapters' normalized failure
+  paths makes the manual refresh return 500 because the three observations run
+  together. Supported unavailable, timeout, malformed, and setup-required
+  conditions already return safe provider observations.
+- Multi-provider restart durability is covered through event replay and
+  deterministic rebuild tests; the process-level restart test continues to
+  exercise legacy Codex version 1 projection compatibility.
 
 ## Decisions applied
 
@@ -69,3 +80,5 @@ separate later task.
   runtime and projection boundary.
 - Full verification passed: `npm test` (71/71), `npm run build`, and
   `git diff --check`.
+- Focused implementation commit `0439eee` passed independent review with no
+  unresolved P0-P2 findings.
