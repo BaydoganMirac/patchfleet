@@ -8,8 +8,8 @@ Last updated: 2026-07-16
 
 Task card 0007 connects the three completed provider proofs to the existing
 single-writer runtime and dashboard through a backward-compatible
-multi-provider projection. Gemini hook setup and lifecycle ingress remain a
-separate later task.
+multi-provider projection. The follow-on Gemini lifecycle ingress is complete
+in Task card 0008.
 
 ## Done
 
@@ -40,8 +40,7 @@ separate later task.
 
 ## Next up
 
-1. Draft Gemini hook setup and secure single-writer lifecycle ingress as a
-   separate owner-approved task.
+- None for Task card 0007. Its Gemini lifecycle-ingress follow-on is complete.
 
 ## Blockers
 
@@ -49,8 +48,8 @@ separate later task.
 
 ## Open questions
 
-- None for Task 0007. Gemini settings ownership and ingress transport are
-  deliberately deferred.
+- None for Task 0007. ADR 0012 now owns Gemini settings ownership and ingress
+  transport.
 
 ## Residual risks
 

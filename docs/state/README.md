@@ -11,5 +11,8 @@
 | V0 provider production integration | Done | 2026-07-16 | [v0-provider-integration.md](v0-provider-integration.md) |
 | V0 Gemini lifecycle ingress | Done | 2026-07-16 | [v0-gemini-lifecycle-ingress.md](v0-gemini-lifecycle-ingress.md) |
 
+Phase 1 local observation is complete. Phase 2 begins only through a new
+owner-approved work-intake task card.
+
 State files are resumable handoffs. Update the relevant file whenever a work
 session changes implementation status, blockers, decisions, or next steps.

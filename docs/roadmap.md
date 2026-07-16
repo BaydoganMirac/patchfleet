@@ -2,23 +2,21 @@
 
 Status: active
 
-Updated: 2026-07-14
+Updated: 2026-07-16
 
 This roadmap describes public technical direction, not dates or commercial
 commitments.
 
 ## Now
 
+- Keep the completed Phase 1 three-provider observation loop stable.
 - Keep the local/Cloud trust contract and contributor rules reviewable.
-- Bootstrap the coordinator, builder, and independent reviewer workflow.
-- Begin product code only from an approved task card.
-- Build a local read-only view with one real Codex adapter, durable observation
-  state, restart recovery, and a small conformance check.
+- Plan the first durable local work-intake queue through an approved task card.
 
 ## Next
 
-- Add Claude Code and Gemini CLI through the proven adapter contract.
 - Add a durable local work queue and capability-aware controls.
+- Start and cancel work through one proven provider before generalizing control.
 - Pair with optional Patchfleet Cloud through outbound HTTPS.
 - Publish only allowlisted operational projections and apply only typed,
   validated remote intents.

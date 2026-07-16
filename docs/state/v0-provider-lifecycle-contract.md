@@ -39,10 +39,8 @@ unchanged.
 
 ## Next up
 
-1. Draft the owner-approved production integration task now that both provider
-   proofs are complete.
-2. Keep both provider proofs out of production persistence until that later
-   integration work is approved.
+- None for Task card 0004. Both provider proofs, production integration, and
+  Gemini lifecycle ingress are complete.
 
 ## Blockers
 
@@ -50,8 +48,8 @@ unchanged.
 
 ## Open questions
 
-- None for the bounded contract bridge. Production migration and ingestion
-  transport remain deliberately deferred until both adapter proofs exist.
+- None for the bounded contract bridge. Production integration reused event
+  schema version 1, and Gemini ingress now uses the accepted sanitized inbox.
 
 ## Decisions applied
 

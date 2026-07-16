@@ -44,10 +44,9 @@ corrections.
 
 ## Next up
 
-1. Freeze the smallest shared observation conformance contract proven by Codex.
-2. Draft disjoint Claude Code and Gemini CLI adapter task cards plus one
-   integration-owner task.
-3. Obtain owner approval before provider-parallel implementation starts.
+- None for Task card 0002. Its conformance, provider-proof, production
+  integration, and Gemini ingress follow-ons are complete in Task cards
+  0003-0008.
 
 ## Blockers
 
@@ -56,9 +55,8 @@ corrections.
 ## Open questions
 
 - Will Codex expose a supported shared live-session surface for work owned by
-  other clients, or will a later managed app-server mode be required?
-- Which equivalent structured lifecycle fields can Claude Code and Gemini CLI
-  prove after the Codex contract is complete?
+  other clients, or will a later managed app-server mode be required? This is a
+  provider capability ceiling, not a Phase 1 blocker.
 
 ## Decisions applied
 

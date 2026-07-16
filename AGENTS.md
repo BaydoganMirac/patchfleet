@@ -71,9 +71,9 @@ Read a matching skill completely before acting:
    receipt.
 10. Never place machine-specific absolute paths, credentials, or private Cloud
     implementation details in this repository.
-11. The current phase is project governance. Do not implement product agent
-    runtime or Cloud infrastructure until the team-bootstrap step is complete
-    and an implementation task is approved.
+11. Product runtime changes start only from an approved task card. Cloud
+    infrastructure remains deferred until local control is useful and its own
+    implementation task is approved.
 
 ## Change discipline
 

@@ -41,18 +41,16 @@ separate owner-approved work.
 
 ## Next up
 
-1. Draft explicit hook setup and secure single-writer ingestion work only after
-   owner approval.
+- None for Task card 0006. Explicit native extension setup and secure
+  single-writer ingress are complete in Task card 0008.
 
 ## Blockers
 
-- None for the adapter proof. Dashboard availability remains later setup and
-  integration work.
+- None for the adapter proof.
 
 ## Open questions
 
-- The secure local hook transport and reversible settings-ownership policy are
-  intentionally deferred until the decoder proof exists.
+- None. ADR 0012 owns the sanitized inbox and native extension lifecycle policy.
 
 ## Decisions applied
 

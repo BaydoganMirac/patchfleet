@@ -38,8 +38,8 @@ Independent review passed after one focused SemVer correction.
 
 ## Next up
 
-1. Draft the owner-approved production integration task now that the Claude
-   and Gemini proofs are complete and their real differences are explicit.
+- None for Task card 0003. Production integration and Gemini lifecycle ingress
+  are complete in Task cards 0007 and 0008.
 
 ## Blockers
 
@@ -47,8 +47,8 @@ Independent review passed after one focused SemVer correction.
 
 ## Open questions
 
-- None for the completed conformance freeze. Gemini's missing original creation
-  time and hook ingress are tracked by the follow-on lifecycle-contract state.
+- None for the completed conformance freeze. Gemini's nullable creation time
+  and hook ingress are implemented by the completed follow-on tasks.
 
 ## Decisions applied
 

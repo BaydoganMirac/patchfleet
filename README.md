@@ -13,9 +13,10 @@ local installation.
 
 ## Current status
 
-The local console observes Codex, Claude Code, and Gemini CLI through their
-supported structured surfaces and persists one sanitized, rebuildable local
-projection. Provider control and Cloud connectivity are not implemented yet.
+Phase 1 is complete. The local console observes Codex, Claude Code, and Gemini
+CLI through their supported structured surfaces and persists one sanitized,
+rebuildable local projection. Durable work intake, provider control, and Cloud
+connectivity are the next milestones and are not implemented yet.
 
 Start with [the documentation map](docs/README.md) before changing code.
 

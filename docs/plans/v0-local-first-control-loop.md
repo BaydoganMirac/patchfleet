@@ -1,53 +1,50 @@
 # V0 local-first control loop
 
-Status: in progress
+Status: Completed
 
 Owner: Patchfleet coordinator
 
 Updated: 2026-07-16
 
-## Progress
+Completed: 2026-07-16
 
-The Codex read-only reference slice is implemented and independently reviewed.
-It probes the supported app-server protocol, persists sanitized lifecycle facts,
-rebuilds the local projection, and preserves `unknown` when cross-client live
-state is not explicit. Completed
-[Task card 0003](0003-provider-observation-conformance.md) adds the independently
-reviewed shared test-only conformance contract. Claude Code and Gemini CLI
-supported-surface discovery is complete. [ADR 0010](../decisions/0010-supported-provider-observation-surfaces.md),
-[Task card 0004](0004-provider-lifecycle-contract.md),
-[Task card 0005](0005-claude-code-agent-view-observation.md), and
-[Task card 0006](0006-gemini-cli-hook-observation.md) define a contract-first
-sequence: integration-owner bridge, then disjoint Claude and Gemini adapter
-proofs. Task cards 0004, 0005, and 0006 are complete and independently
-reviewed. Claude's sanitized nonempty real Agent View smoke validated the
-installed schema after a focused Unix-millisecond timestamp correction.
-[ADR 0011](../decisions/0011-multi-provider-observation-projection.md) and
-[Task card 0007](0007-multi-provider-production-observation.md) are now also
-complete and independently reviewed: one manual refresh persists the three
-fixed pull/probe observations into a provider-scoped, rebuildable projection,
-and the dashboard renders all three without provider-native sensitive data.
-Gemini hook setup and secure lifecycle ingress remain a separate approval gate.
+Independent review: Passed across Task cards 0001-0008
+
+## Completion
+
+Task cards 0001-0008 are complete and independently reviewed. One manual
+refresh observes Codex, Claude Code, and Gemini CLI through supported structured
+surfaces, persists sanitized lifecycle facts through one append-only writer,
+and rebuilds a provider-scoped dashboard projection after restart.
+
+Codex uses the supported app-server protocol, Claude uses Agent View JSON, and
+Gemini uses an explicit native extension with a sanitized lifecycle inbox.
+Gemini's real link/status/uninstall smoke passed after adding compatibility for
+Gemini CLI 0.43.0 structured extension output on stderr.
+
+The closing evidence is 84 passing tests, a successful production build,
+restart/recovery coverage, real provider smokes, and no unresolved P0-P3 review
+finding. No Cloud call, provider control, prompt, transcript, source, diff,
+tool output, token, credential, or absolute path enters the normalized state.
 
 ## Goal
 
 Prove Patchfleet's core value without Cloud: one local screen shows real coding
 agent activity through a durable, provider-neutral model.
 
-The first implementation uses Codex end to end. Claude Code and Gemini CLI are
-added only after the contract is proven by real Codex behavior.
+Codex proved the reference contract first; Claude Code and Gemini CLI now pass
+through the same fixed provider-neutral production boundary.
 
 ## Demo at completion
 
 On a clean local installation, a user can:
 
 1. start Patchfleet;
-2. see whether Codex is installed and observable;
-3. see active and recently terminal Codex sessions with normalized status;
+2. see whether Codex, Claude Code, and Gemini CLI are installed and observable;
+3. see supported active and recent sessions with normalized status;
 4. restart Patchfleet without losing previously acknowledged lifecycle facts;
 5. inspect a clear unavailable or error reason when observation is impossible;
-6. run the same conformance suite that later Claude and Gemini adapters must
-   satisfy.
+6. run the shared provider, persistence, recovery, and local-shell checks.
 
 No Cloud account or network call is required.
 
@@ -139,18 +136,12 @@ account menus, remote toggles, or fake controls.
   enters the normalized projection.
 - Unsupported provider conditions produce a stable, user-actionable state.
 
-## Follow-on slice
+## Phase 1 closure
 
-When Codex passes:
-
-1. freeze the smallest conformance contract;
-2. discover only supported machine-readable provider surfaces;
-3. let the integration owner resolve proven contract differences through a
-   recorded decision;
-4. implement Claude Code and Gemini CLI proofs in bounded parallel tasks with
-   disjoint files;
-5. generalize production persistence and UI only after both proofs exist;
-6. declare Phase 1 complete only when all three providers pass end-to-end.
+The conformance contract is frozen, all three provider adapters use supported
+structured surfaces, production persistence and UI are provider-scoped, and
+all three providers pass end to end. Work intake and control begin in Phase 2
+through a new owner-approved task card.
 
 ## Explicitly deferred
 

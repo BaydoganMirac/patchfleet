@@ -10,8 +10,9 @@ Baseline: reviewed secure local shell
 
 Patchfleet is initialized as the public local-first runtime and control console
 for Claude Code, Codex, and Gemini CLI. Product, architecture, protocol,
-roadmap, agent-collaboration, and first-slice contracts now exist. No runtime
-feature beyond the Next.js shell has been implemented.
+roadmap, agent-collaboration, and first-slice contracts now exist. Foundation
+closed before provider runtime work, which is tracked by the later Phase 1
+state files.
 
 ## Done
 
@@ -54,10 +55,8 @@ feature beyond the Next.js shell has been implemented.
 
 ## Next up
 
-1. Continue through
-   [V0 Codex observation](v0-codex-observation.md) and its Task card 0002.
-2. Obtain owner approval for its exact files and acceptance criteria.
-3. Start provider runtime only through that approved task.
+- None for foundation. Phase 1 provider observation is complete; Phase 2 begins
+  through a new owner-approved work-intake task card.
 
 ## Blockers
 
@@ -65,9 +64,8 @@ feature beyond the Next.js shell has been implemented.
 
 ## Open questions
 
-- Should recent local session history default to 7 or 30 days?
-- Which supported Codex interface is stable enough for session observation
-  without parsing human-formatted terminal output?
+- None for foundation. Phase 1 selected a deterministic 20-session observation
+  limit and the supported Codex app-server interface.
 
 ## Decisions
 

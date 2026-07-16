@@ -47,8 +47,7 @@ and a sanitized nonempty real smoke plus independent review passed.
 
 ## Next up
 
-1. Draft the owner-approved production integration task that connects the
-   proven Claude and Gemini boundaries to the existing single-writer runtime.
+- None for Task card 0005. Multi-provider production integration is complete.
 
 ## Blockers
 

@@ -2,16 +2,13 @@
 
 Status: working collaboration contract
 
-Updated: 2026-07-13
+Updated: 2026-07-16
 
 ## Recommendation now
 
-The product contracts and repo-local skills are now the foundation. The next
-step is to bootstrap the Patchfleet development team. This is a coding-team
-workflow, not implementation of Patchfleet's product agent runtime.
-
-Start with one coordinator, one builder, and one independent reviewer. Do not
-create provider-specific or Cloud roles yet.
+Phase 1 and the initial team bootstrap are complete. Keep one coordinator, one
+bounded Builder, and one independent Reviewer for Phase 2. Start with durable
+local work intake; do not create a Cloud role until local control is useful.
 
 ## Initial team
 
@@ -80,27 +77,24 @@ Each delegated task should specify:
 - Forbidden scope: adjacent work the agent must not absorb.
 - Handoff: state file, local commit, tests, and open risks.
 
-## Suggested first agent task
+## Suggested next agent task
 
-Objective: implement the Phase 1A local read-only slice with a real Codex
-adapter.
+Objective: implement the smallest durable local work-intake queue after its
+task card is approved.
 
 Owned scope:
 
-- shared normalized observation types;
-- local event writer and projection;
-- Codex adapter;
-- provider/session dashboard;
-- conformance and recovery tests.
+- one local WorkItem contract;
+- append-only queue events and a rebuildable projection;
+- create, list, and remove interactions;
+- restart recovery and idempotency checks.
 
 Forbidden scope:
 
-- Cloud calls;
-- remote commands;
-- Claude or Gemini implementation;
+- provider process launch or cancellation;
+- Cloud pairing, sync, or remote commands;
+- queue reordering, retries, or questions;
 - desktop packaging;
 - authentication and billing.
 
-This should start after the owner approves the plan document. License selection
-must be settled before public distribution, but it does not block local
-implementation.
+This starts only after the owner approves the Phase 2 task card.
