@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { chmod, mkdir, mkdtemp, readFile, realpath, writeFile } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { join, parse } from "node:path";
@@ -12,8 +13,12 @@ import {
   applyWorkCommand,
   applyWorkControlCommand,
   readWorkProjection,
+  reconcileWorkControlOwnership,
 } from "../lib/runtime/work-queue.mjs";
-import { persistObservation } from "../lib/runtime/observation-store.mjs";
+import {
+  commitEventTransaction,
+  persistObservation,
+} from "../lib/runtime/observation-store.mjs";
 
 const FIRST = "2026-07-16T12:00:00.000Z";
 const SECOND = "2026-07-16T12:01:00.000Z";
@@ -42,6 +47,9 @@ const read = () => fs.existsSync(stateFile)
   : { processes: 0, threadStarts: 0, turnStarts: 0, interrupts: 0, threads: [], serverResponse: null, timedOut: false, initialize: null, startParams: null, turnStartParams: null, interruptParams: null };
 const write = (state) => fs.writeFileSync(stateFile, JSON.stringify(state));
 const state = read(); state.processes += 1; write(state);
+process.on("SIGTERM", () => {
+  const current = read(); current.stops = (current.stops || 0) + 1; write(current); process.exit(0);
+});
 const send = (value) => process.stdout.write(JSON.stringify(value) + "\\n");
 const thread = (params, id) => ({
   id, cwd: params.cwd, threadSource: params.threadSource, ephemeral: false,
@@ -62,8 +70,14 @@ readline.createInterface({ input: process.stdin }).on("line", (line) => {
     current.threadStarts += 1;
     current.startParams = message.params;
     const value = thread(message.params, "thread-" + current.threadStarts);
-    current.threads.push(value); write(current);
-    send({ id: message.id, result: { thread: value, raw: ${JSON.stringify(NATIVE_CANARY)} } });
+    current.threads.push(value);
+    const timeout = mode === "timeout-thread-once" && !current.timedOut;
+    current.timedOut ||= timeout; write(current);
+    if (timeout) return;
+    send({ id: message.id, result: {
+      thread: mode === "malformed-thread" ? { ...value, cwd: "/unsafe" } : value,
+      raw: ${JSON.stringify(NATIVE_CANARY)}
+    } });
     return send({ id: "server-request-1", method: "item/tool/requestUserInput", params: { raw: ${JSON.stringify(NATIVE_CANARY)} } });
   }
   if (message.method === "turn/start") {
@@ -72,14 +86,20 @@ readline.createInterface({ input: process.stdin }).on("line", (line) => {
     value.turns = [turn]; current.turnStarts += 1; current.turnStartParams = message.params;
     const timeout = mode === "timeout-turn-once" && !current.timedOut;
     current.timedOut ||= timeout; write(current);
-    if (!timeout) send({ id: message.id, result: { turn, raw: ${JSON.stringify(NATIVE_CANARY)} } });
+    if (!timeout) send({ id: message.id, result: {
+      turn: mode === "malformed-turn" ? { ...turn, id: "unsafe id" } : turn,
+      raw: ${JSON.stringify(NATIVE_CANARY)}
+    } });
     return;
   }
   if (message.method === "turn/interrupt") {
     const value = current.threads.find((item) => item.id === message.params.threadId);
     value.turns[0].status = "interrupted"; value.turns[0].completedAt = 1784200000;
-    current.interrupts += 1; current.interruptParams = message.params; write(current);
-    return send({ id: message.id, result: {} });
+    current.interrupts += 1; current.interruptParams = message.params;
+    const timeout = mode === "timeout-interrupt-once" && !current.timedOut;
+    current.timedOut ||= timeout; write(current);
+    if (!timeout) return send({ id: message.id, result: mode === "malformed-interrupt" ? null : {} });
+    return;
   }
 });
 `;
@@ -145,6 +165,27 @@ function cancel() {
     expiresAt: EXPIRES,
     payload: { runId: "run:control-start", expectedRunRevision: 1 },
   };
+}
+
+function workEvent(type, recordedAt, payload) {
+  return { id: randomUUID(), schemaVersion: 1, type, recordedAt, payload };
+}
+
+function appendWorkFacts(dataDir, additions) {
+  return commitEventTransaction(() => ({ additions, result: () => undefined }), { dataDir });
+}
+
+function launchingFacts(ownerEpoch) {
+  const intent = start();
+  return [
+    workEvent("command.requested", SECOND, { intent }),
+    workEvent("run.launching", SECOND, {
+      intentId: intent.intentId,
+      workItemId: intent.payload.workItemId,
+      expectedItemRevision: intent.payload.expectedItemRevision,
+      ownerEpoch,
+    }),
+  ];
 }
 
 test("start uses one bounded app-server, rejects server requests, and persists only safe run ids", async () => {
@@ -222,25 +263,49 @@ test("start uses one bounded app-server, rejects server requests, and persists o
   }
 });
 
-test("an uncertain turn start fails closed on exact retry without duplicate work", async () => {
+test("an uncertain turn start is terminal in the same call and exact retry does not duplicate work", async () => {
   const dataDir = await mkdtemp(join(tmpdir(), "patchfleet-control-data-"));
   const cwd = await workspace();
   const fake = await fixture({ mode: "timeout-turn-once" });
   try {
     await applyWorkCommand(enqueue(cwd), { dataDir, now: () => FIRST });
-    await assert.rejects(
-      () => applyWorkControlCommand(start(), {
-        dataDir, command: fake.command, now: () => SECOND, timeoutMs: 500,
-      }),
-      (error) => error.outcomeUnknown === true,
-    );
-    assert.equal((await readWorkProjection({ dataDir })).items[0].status, "launching");
     const failed = await applyWorkControlCommand(start(), {
-      dataDir, command: fake.command, now: () => THIRD, timeoutMs: 500,
+      dataDir, command: fake.command, now: () => SECOND, timeoutMs: 500,
     });
     assert.deepEqual([failed.outcome, failed.reasonCode], ["failed", "START_OUTCOME_UNKNOWN"]);
+    assert.deepEqual(
+      await applyWorkControlCommand(start(), {
+        dataDir, command: fake.command, now: () => THIRD, timeoutMs: 500,
+      }),
+      failed,
+    );
     const native = await fake.state();
     assert.deepEqual([native.threadStarts, native.turnStarts], [1, 1]);
+    const projection = await readWorkProjection({ dataDir });
+    assert.deepEqual([projection.items[0].status, projection.runs.length], ["blocked", 0]);
+  } finally {
+    await closeCodexControl();
+  }
+});
+
+test("an uncertain thread start is terminal in the same call and same-owner retry starts no replacement", async () => {
+  const dataDir = await mkdtemp(join(tmpdir(), "patchfleet-control-data-"));
+  const cwd = await workspace();
+  const fake = await fixture({ mode: "timeout-thread-once" });
+  try {
+    await applyWorkCommand(enqueue(cwd), { dataDir, now: () => FIRST });
+    const failed = await applyWorkControlCommand(start(), {
+      dataDir, command: fake.command, now: () => SECOND, timeoutMs: 500,
+    });
+    assert.deepEqual([failed.outcome, failed.reasonCode], ["failed", "START_OUTCOME_UNKNOWN"]);
+    assert.deepEqual(
+      await applyWorkControlCommand(start(), {
+        dataDir, command: fake.command, now: () => THIRD, timeoutMs: 500,
+      }),
+      failed,
+    );
+    const native = await fake.state();
+    assert.deepEqual([native.threadStarts, native.turnStarts], [1, 0]);
     const projection = await readWorkProjection({ dataDir });
     assert.deepEqual([projection.items[0].status, projection.runs.length], ["blocked", 0]);
   } finally {
@@ -254,19 +319,7 @@ test("an owner crash before provider prepare blocks the launch without starting 
   const fake = await fixture();
   try {
     await applyWorkCommand(enqueue(cwd), { dataDir, now: () => FIRST });
-    await assert.rejects(
-      () => applyWorkControlCommand(start(), {
-        dataDir,
-        command: fake.command,
-        now: () => SECOND,
-        ownerEpoch: "owner-before-prepare",
-        timeoutMs: 500,
-        prepare: async () => {
-          throw Object.assign(new Error("simulated process loss"), { outcomeUnknown: true });
-        },
-      }),
-      (error) => error.outcomeUnknown === true,
-    );
+    await appendWorkFacts(dataDir, launchingFacts("owner-before-prepare"));
     assert.equal((await readWorkProjection({ dataDir })).items[0].status, "launching");
 
     const failed = await applyWorkControlCommand(start(), {
@@ -290,20 +343,14 @@ test("an owner crash after provider prepare leaves one empty thread and never st
   const fake = await fixture();
   try {
     await applyWorkCommand(enqueue(cwd), { dataDir, now: () => FIRST });
-    await assert.rejects(
-      () => applyWorkControlCommand(start(), {
-        dataDir,
-        command: fake.command,
-        now: () => SECOND,
-        ownerEpoch: "owner-before-prepare-checkpoint",
-        timeoutMs: 500,
-        prepare: async (options) => {
-          await prepareCodexWork(options);
-          throw Object.assign(new Error("simulated process loss"), { outcomeUnknown: true });
-        },
-      }),
-      (error) => error.outcomeUnknown === true,
-    );
+    await appendWorkFacts(dataDir, launchingFacts("owner-before-prepare-checkpoint"));
+    await prepareCodexWork({
+      intentId: start().intentId,
+      workingDirectory: cwd,
+      command: fake.command,
+      timeoutMs: 500,
+    });
+    await closeCodexControl();
     assert.equal(
       (await readFile(join(dataDir, "events.jsonl"), "utf8")).includes('"type":"run.prepared"'),
       false,
@@ -332,19 +379,30 @@ test("an owner crash after turn.requested blocks the launch without a turn or re
   const fake = await fixture();
   try {
     await applyWorkCommand(enqueue(cwd), { dataDir, now: () => FIRST });
-    await assert.rejects(
-      () => applyWorkControlCommand(start(), {
-        dataDir,
-        command: fake.command,
-        now: () => SECOND,
-        ownerEpoch: "owner-before-turn",
-        timeoutMs: 500,
-        start: async () => {
-          throw Object.assign(new Error("simulated process loss"), { outcomeUnknown: true });
-        },
+    const ownerEpoch = "owner-before-turn";
+    await appendWorkFacts(dataDir, launchingFacts(ownerEpoch));
+    const prepared = await prepareCodexWork({
+      intentId: start().intentId,
+      workingDirectory: cwd,
+      command: fake.command,
+      timeoutMs: 500,
+    });
+    await appendWorkFacts(dataDir, [
+      workEvent("run.prepared", SECOND, {
+        intentId: start().intentId,
+        workItemId: start().payload.workItemId,
+        providerId: "codex",
+        providerSessionId: prepared.providerSessionId,
+        expectedItemRevision: start().payload.expectedItemRevision,
+        ownerEpoch,
       }),
-      (error) => error.outcomeUnknown === true,
-    );
+      workEvent("turn.requested", SECOND, {
+        intentId: start().intentId,
+        providerSessionId: prepared.providerSessionId,
+        ownerEpoch,
+      }),
+    ]);
+    await closeCodexControl();
     const preparedLog = await readFile(join(dataDir, "events.jsonl"), "utf8");
     assert.equal(preparedLog.includes('"type":"run.prepared"'), true);
     assert.equal(preparedLog.includes(NATIVE_CANARY), false);
@@ -391,6 +449,125 @@ test("same-owner cancel interrupts once and duplicate delivery returns the recei
     assert.deepEqual(native.interruptParams, { threadId: "thread-1", turnId: "turn-1" });
     const projection = await readWorkProjection({ dataDir });
     assert.deepEqual([projection.items[0].status, projection.runs[0].status], ["interrupted", "interrupted"]);
+  } finally {
+    await closeCodexControl();
+  }
+});
+
+test("an uncertain interrupt writes one terminal receipt and exact retry does not interrupt twice", async () => {
+  const dataDir = await mkdtemp(join(tmpdir(), "patchfleet-control-data-"));
+  const cwd = await workspace();
+  const fake = await fixture({ mode: "timeout-interrupt-once" });
+  try {
+    await applyWorkCommand(enqueue(cwd), { dataDir, now: () => FIRST });
+    await applyWorkControlCommand(start(), {
+      dataDir, command: fake.command, now: () => SECOND, timeoutMs: 500,
+    });
+    const failed = await applyWorkControlCommand(cancel(), {
+      dataDir, command: fake.command, now: () => THIRD, timeoutMs: 500,
+    });
+    assert.deepEqual([failed.outcome, failed.reasonCode], ["failed", "RUN_SESSION_LOST"]);
+    assert.deepEqual(
+      await applyWorkControlCommand(cancel(), {
+        dataDir, command: fake.command, now: () => THIRD, timeoutMs: 500,
+      }),
+      failed,
+    );
+    const native = await fake.state();
+    assert.deepEqual([native.interrupts, native.stops], [1, 1]);
+    const projection = await readWorkProjection({ dataDir });
+    assert.deepEqual(
+      [projection.items[0].status, projection.runs[0].status],
+      ["blocked", "failed"],
+    );
+  } finally {
+    await closeCodexControl();
+  }
+});
+
+test("malformed post-side-effect responses close control and fail closed", async (t) => {
+  for (const mode of ["malformed-thread", "malformed-turn", "malformed-interrupt"]) {
+    await t.test(mode, async () => {
+      const dataDir = await mkdtemp(join(tmpdir(), "patchfleet-control-data-"));
+      const cwd = await workspace();
+      const fake = await fixture({ mode });
+      try {
+        await applyWorkCommand(enqueue(cwd), { dataDir, now: () => FIRST });
+        const started = await applyWorkControlCommand(start(), {
+          dataDir, command: fake.command, now: () => SECOND, timeoutMs: 500,
+        });
+        if (mode === "malformed-interrupt") {
+          assert.equal(started.outcome, "applied");
+          const failed = await applyWorkControlCommand(cancel(), {
+            dataDir, command: fake.command, now: () => THIRD, timeoutMs: 500,
+          });
+          assert.deepEqual([failed.outcome, failed.reasonCode], ["failed", "RUN_SESSION_LOST"]);
+        } else {
+          assert.deepEqual([started.outcome, started.reasonCode], ["failed", "START_OUTCOME_UNKNOWN"]);
+        }
+        const native = await fake.state();
+        assert.equal(native.stops, 1);
+        assert.deepEqual(
+          [native.threadStarts, native.turnStarts, native.interrupts],
+          mode === "malformed-thread" ? [1, 0, 0]
+            : mode === "malformed-turn" ? [1, 1, 0]
+              : [1, 1, 1],
+        );
+        const projection = await readWorkProjection({ dataDir });
+        assert.deepEqual(
+          [projection.items[0].status, projection.runs.length ? projection.runs[0].status : null],
+          mode === "malformed-interrupt" ? ["blocked", "failed"] : ["blocked", null],
+        );
+      } finally {
+        await closeCodexControl();
+      }
+    });
+  }
+});
+
+test("restart reconciliation terminalizes an unreceipted old-owner cancel", async () => {
+  const dataDir = await mkdtemp(join(tmpdir(), "patchfleet-control-data-"));
+  const cwd = await workspace();
+  const fake = await fixture();
+  try {
+    await applyWorkCommand(enqueue(cwd), { dataDir, now: () => FIRST });
+    await applyWorkControlCommand(start(), {
+      dataDir,
+      command: fake.command,
+      now: () => SECOND,
+      ownerEpoch: "owner-before-cancel-crash",
+      timeoutMs: 500,
+    });
+    await appendWorkFacts(dataDir, [workEvent("command.requested", THIRD, { intent: cancel() })]);
+    assert.equal((await readWorkProjection({ dataDir })).runs[0].status, "cancelling");
+    await closeCodexControl();
+
+    await reconcileWorkControlOwnership({
+      dataDir,
+      now: () => THIRD,
+      ownerEpoch: "owner-after-cancel-crash",
+    });
+    const projection = await readWorkProjection({ dataDir });
+    const failed = projection.receipts.find((item) => item.intentId === cancel().intentId);
+    assert.deepEqual([failed.outcome, failed.reasonCode], ["failed", "RUN_SESSION_LOST"]);
+    assert.deepEqual(
+      [projection.items[0].status, projection.runs[0].status],
+      ["blocked", "failed"],
+    );
+    assert.deepEqual(
+      await applyWorkControlCommand(cancel(), {
+        dataDir,
+        command: fake.command,
+        now: () => THIRD,
+        ownerEpoch: "owner-after-cancel-crash",
+        timeoutMs: 500,
+      }),
+      failed,
+    );
+    assert.equal((await fake.state()).interrupts, 0);
+    const events = (await readFile(join(dataDir, "events.jsonl"), "utf8")).trim().split("\n").map(JSON.parse);
+    assert.equal(events.filter((item) =>
+      item.type === "command.receipted" && item.payload.receipt.intentId === cancel().intentId).length, 1);
   } finally {
     await closeCodexControl();
   }

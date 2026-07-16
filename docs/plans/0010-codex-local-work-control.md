@@ -58,6 +58,9 @@ extension, and Claude/Gemini control code are read-only.
   without a `.git` file or directory.
 - Start one text turn and persist only validated opaque thread/turn IDs.
 - Keep initialize capabilities null and use no experimental API.
+- Gate both UI controls and POST execution through one adapter compatibility
+  predicate requiring available supported metadata and stable Codex 0.144.1 or
+  newer; availability alone never enables control.
 - Before any provider launch, fsync a `run.launching` marker with the current
   opaque owner epoch; carry that epoch through prepared, turn-requested, and
   started facts.
@@ -67,6 +70,9 @@ extension, and Claude/Gemini control code are read-only.
   Codex 0.144.1 rejects resume after that owner closes, so an old-epoch pending
   launch becomes `START_OUTCOME_UNKNOWN`/blocked and an old-epoch active run
   becomes session-lost/failed/blocked. Never start a replacement thread or turn.
+- Terminalize uncertain thread start, turn start, and interrupt outcomes in the
+  same call so exact retries never repeat the provider side effect. Reconcile
+  an old-owner pending cancel with a failed `RUN_SESSION_LOST` receipt atomically.
 - Reject app-server requests and discard notifications without serializing
   their contents.
 - Collapse process/protocol failures into stable safe reason codes.
@@ -83,10 +89,12 @@ extension, and Claude/Gemini control code are read-only.
 ## Acceptance
 
 - Fake app-server tests prove initialize, start, same-owner interrupt,
-  duplicate suppression, owner-epoch crash windows, fail-closed restart
-  reconciliation, request rejection, and raw-data exclusion.
+  duplicate suppression, timeout and malformed-success at-most-once behavior,
+  owner-epoch crash windows, fail-closed restart reconciliation, request
+  rejection, child-stream failure handling, and raw-data exclusion.
 - Local-shell tests prove origin/body bounds, route redirects, capability-aware
-  UI, durable queue, and restart state.
+  UI and POST behavior for supported and old Codex versions, durable queue, and
+  restart state.
 - Disposable real Codex diagnostics prove same-owner start/interrupt and record
   that both empty-thread and active-turn resume are rejected after owner loss;
   prompts/output/paths remain absent from receipts and observation projection.
@@ -99,8 +107,9 @@ extension, and Claude/Gemini control code are read-only.
 ## Builder evidence
 
 - Focused control/runtime tests cover every pre-provider, post-prepare,
-  post-turn-request, uncertain-start, same-owner cancel, and old-owner active
-  run window without a replacement provider start.
+  post-turn-request, uncertain thread/turn start, uncertain interrupt,
+  malformed-success, same-owner cancel, old-owner pending cancel, and old-owner
+  active run window without a replacement provider side effect.
 - Local-shell tests cover the loopback launcher epoch, stale GET without
   mutation, Refresh reconciliation, blocked/session-lost UI, route bounds,
   responsive behavior, and privacy canaries.

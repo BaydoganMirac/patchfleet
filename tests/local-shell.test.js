@@ -214,14 +214,19 @@ function postForm(port, fields, options = {}) {
   });
 }
 
-function projection({ state = "available", sessions = [], error } = {}) {
+function projection({
+  state = "available",
+  version = state === "unavailable" ? null : "1.2.3",
+  sessions = [],
+  error,
+} = {}) {
   return {
     schemaVersion: 1,
     provider: {
       id: "codex",
       displayName: "Codex",
       state,
-      version: state === "unavailable" ? null : "1.2.3",
+      version,
       capabilities: {
         recentObservation: state === "available",
         explicitLiveStatus: state === "available",
@@ -474,6 +479,27 @@ test("local work route is bounded, capability-aware, idempotent, and restart-saf
     })).statusCode, 303);
     page = await fetch(server.port);
     assert.match(page.body, /Start Codex/);
+
+    const { persistObservation } = await import("../lib/runtime/observation-store.mjs");
+    await persistObservation(projection({ version: "0.143.9" }), { dataDir });
+    page = await fetch(server.port);
+    assert.match(page.body, /control unavailable/);
+    assert.doesNotMatch(page.body, /Start Codex/);
+    const unsupported = await postForm(server.port, {
+      action: "start",
+      commandId: "cmd:55555555-5555-4555-8555-555555555555",
+      ...commandTimes,
+      workItemId,
+      expectedItemRevision: "1",
+    });
+    assert.equal(unsupported.statusCode, 303);
+    assert.match((await fetch(server.port)).body, /PROVIDER_CONTROL_UNAVAILABLE/);
+    assert.equal((await fetch(server.port, {
+      path: "/api/observe",
+      method: "POST",
+      headers: { origin: `http://127.0.0.1:${server.port}` },
+    })).statusCode, 303);
+    assert.match((await fetch(server.port)).body, /Start Codex/);
 
     const startFields = {
       action: "start",

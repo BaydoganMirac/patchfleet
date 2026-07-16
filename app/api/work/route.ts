@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { supportsCodexControl } from "@/lib/providers/codex.mjs";
 import { readProjection } from "@/lib/runtime/observation-store.mjs";
 import { readLocalForm } from "@/lib/runtime/local-form.mjs";
 import {
@@ -34,12 +35,9 @@ function base(form: Record<string, string>, type: string) {
   };
 }
 
-async function codexAvailable() {
+async function codexControlAvailable() {
   const projection = await readProjection();
-  return projection?.observations.some(
-    (item: { provider: { id: string; state: string } }) =>
-      item.provider.id === "codex" && item.provider.state === "available",
-  ) ?? false;
+  return projection?.observations.some(supportsCodexControl) ?? false;
 }
 
 export async function POST(request: NextRequest) {
@@ -83,7 +81,7 @@ export async function POST(request: NextRequest) {
           workItemId: form.workItemId,
           expectedItemRevision: number(form.expectedItemRevision),
         },
-      }, { providerAvailable: await codexAvailable() });
+      }, { providerAvailable: await codexControlAvailable() });
     } else {
       await applyWorkControlCommand({
         ...base(form, "cancel_run"),
@@ -91,7 +89,7 @@ export async function POST(request: NextRequest) {
           runId: form.runId,
           expectedRunRevision: number(form.expectedRunRevision),
         },
-      }, { providerAvailable: await codexAvailable() });
+      }, { providerAvailable: await codexControlAvailable() });
     }
     return NextResponse.redirect(new URL("/", request.headers.get("origin")!), 303);
   } catch (error) {

@@ -25,6 +25,14 @@ Codex is the only Phase 2 execution provider. The supported control window is
 one Patchfleet server boot, identified by a random opaque owner epoch that the
 local launcher supplies to all Next.js server workers.
 
+Observation availability alone does not enable control. One shared adapter
+predicate gates both the local UI and mutation route on an available Codex
+observation, both supported app-server observation capabilities, and a stable
+Codex version at or above the tested 0.144.1 minimum. Pre-release, malformed,
+older, unavailable, or capability-incomplete observations fail closed. This is
+a compatibility floor, not method discovery; a future protocol capability
+surface should replace the version policy when Codex exposes one.
+
 For every start intent Patchfleet:
 
 1. atomically fsyncs `command.requested` and `run.launching`, including the
@@ -49,11 +57,20 @@ The restart policy is deliberately at-most-once and fail-closed:
   `run.start_unknown` fact, a failed `START_OUTCOME_UNKNOWN` receipt, and a
   blocked work item;
 - an active run from another owner epoch becomes one idempotent
-  `run.session_lost` fact, a failed Run, and a blocked work item;
+  `run.session_lost` fact, a failed Run, and a blocked work item; any durable
+  unreceipted cancel for that run receives `RUN_SESSION_LOST` in the same event
+  transaction;
 - a read-only page load does not mutate state and never exposes Cancel for an
   old owner epoch; manual Refresh or any control attempt performs the durable
   reconciliation;
 - no restart path creates a replacement thread or turn.
+
+A timeout, lost connection, malformed success response, or other uncertain
+result after `thread/start`, `turn/start`, or `turn/interrupt` is terminalized
+in the same command call. Start writes `run.start_unknown` plus a failed
+`START_OUTCOME_UNKNOWN` receipt; cancel writes `run.session_lost` plus a failed
+`RUN_SESSION_LOST` receipt. The owning client closes, and an exact retry returns
+that receipt without repeating the provider side effect.
 
 This policy may block work that never began, but it cannot duplicate provider
 work after an uncertain launch. A future provider-supported atomic start or
@@ -65,7 +82,8 @@ persisting their contents. No provider stdout, stderr, transcript, response,
 tool payload, token, source, diff, credential, environment value, or absolute
 path is copied into a command receipt. Adapter errors collapse to stable safe
 reason codes. `threadSource` remains diagnostic metadata only and is never a
-correctness or recovery key.
+correctness or recovery key. Child stdin errors fail all pending requests
+without becoming unhandled process errors.
 
 The local preflight rejects a filesystem root, the user's home directory, a
 missing path, a non-directory, and a directory without a `.git` file or

@@ -34,8 +34,9 @@ in the separate local work projection and never copied into command receipts.
 
 Queue work from the console by providing a title, instruction, and absolute Git
 worktree root. Enqueue works without Codex; start appears only after Codex is
-observed as available. Patchfleet starts Codex with `workspace-write` and
-approval policy `never`, and exposes cancel only for a linked active run.
+observed as available with the tested app-server metadata on stable Codex
+0.144.1 or newer. Patchfleet starts Codex with `workspace-write` and approval
+policy `never`, and exposes cancel only for a linked active run.
 Codex control belongs to the current local app boot. After an app restart,
 Patchfleet hides Cancel until Refresh safely reconciles an old active run as
 session-lost/blocked; it never launches replacement work automatically.

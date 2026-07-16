@@ -4,7 +4,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { safeObservationError } from "../lib/domain/observation.mjs";
-import { observeCodex, probeCodex } from "../lib/providers/codex.mjs";
+import {
+  observeCodex,
+  probeCodex,
+  supportsCodexControl,
+} from "../lib/providers/codex.mjs";
 import { assertProviderObservation } from "./support/provider-observation-conformance.mjs";
 
 const NOW = new Date("2026-07-15T12:00:00.000Z");
@@ -28,6 +32,30 @@ const CANARIES = [
   "CANARY_TOOL_OUTPUT",
   "/private/CANARY_PATH",
 ];
+
+test("control compatibility requires tested Codex metadata and version", () => {
+  const observation = {
+    provider: {
+      id: "codex",
+      state: "available",
+      version: "0.144.1",
+      capabilities: { recentObservation: true, explicitLiveStatus: true },
+    },
+  };
+  assert.equal(supportsCodexControl(observation), true);
+  assert.equal(supportsCodexControl({
+    provider: { ...observation.provider, version: "1.2.3" },
+  }), true);
+  for (const provider of [
+    { ...observation.provider, version: "0.144.0" },
+    { ...observation.provider, version: "0.144.1-beta.1" },
+    { ...observation.provider, version: "invalid" },
+    { ...observation.provider, state: "degraded" },
+    { ...observation.provider, capabilities: { recentObservation: true, explicitLiveStatus: false } },
+  ]) {
+    assert.equal(supportsCodexControl({ provider }), false);
+  }
+});
 
 async function fakeCodex(mode) {
   const directory = await mkdtemp(join(tmpdir(), "patchfleet-codex-"));

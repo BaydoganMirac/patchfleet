@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { supportsCodexControl } from "@/lib/providers/codex.mjs";
 import { readProjection, readWorkProjection } from "@/lib/runtime/observation-store.mjs";
 import { currentWorkControlOwnerEpoch } from "@/lib/runtime/work-queue.mjs";
 
@@ -160,9 +161,7 @@ function WorkConsole({ work, projection, ownerEpoch }: {
   projection: Projection | null;
   ownerEpoch: string;
 }) {
-  const codexAvailable = projection?.observations.some(
-    (item) => item.provider.id === "codex" && item.provider.state === "available",
-  ) ?? false;
+  const codexAvailable = projection?.observations.some(supportsCodexControl) ?? false;
   const latestReceipts = work.receipts.slice(-5).reverse();
   return (
     <>
