@@ -39,6 +39,7 @@ if (args[0] === "--version") {
 } else if (${JSON.stringify(mode)} === "extension-timeout") setInterval(() => {}, 1000);
 else if (${JSON.stringify(mode)} === "extension-failed") process.exit(2);
 else if (${JSON.stringify(mode)} === "extension-malformed") console.log("{");
+else if (${JSON.stringify(mode)} === "extension-stderr") console.error(${JSON.stringify(extensionOutput)});
 else if (${JSON.stringify(mode)} !== "extension-blank") console.log(${JSON.stringify(extensionOutput)});
 `;
   await writeFile(command, source, "utf8");
@@ -75,6 +76,7 @@ test("extension status probe is bounded and uses structured output", async (t) =
 
   for (const [name, mode, output, expected] of [
     ["active", "valid", JSON.stringify([{ name: "patchfleet-gemini", isActive: true, path: CANARY }]), { state: "active" }],
+    ["active-stderr", "extension-stderr", JSON.stringify([{ name: "patchfleet-gemini", isActive: true, path: CANARY }]), { state: "active" }],
     ["missing", "valid", JSON.stringify([{ name: "other", isActive: true }]), { state: "setup-required" }],
     ["inactive", "valid", JSON.stringify([{ name: "patchfleet-gemini", isActive: false }]), { state: "setup-required" }],
     ["empty", "valid", "[]", { state: "setup-required" }],

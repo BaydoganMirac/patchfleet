@@ -1,14 +1,15 @@
 # V0 Gemini lifecycle ingress
 
-Status: Done
+Status: In progress
 
 Last updated: 2026-07-16
 
 ## Summary
 
 Task card 0008 connects the proven Gemini decoder through Gemini
-CLI's native linked-extension mechanism and a sanitized local inbox. No real
-extension or user setting has been changed.
+CLI's native linked-extension mechanism and a sanitized local inbox. Automated
+work does not mutate real extension state or user settings; the owner linked
+the extension during the explicit smoke test.
 
 ## Done
 
@@ -45,14 +46,22 @@ extension or user setting has been changed.
 - `npm run build` passed.
 - `git diff --check` passed.
 - Independent re-review passed with no unresolved P0-P3 finding.
+- Owner smoke linked the extension successfully and proved Gemini CLI 0.43.0
+  emits its successful structured extension list on stderr with stdout empty.
+- Updated the status probe to accept pure bounded JSON from either stdout or
+  stderr while rejecting mixed-channel output; native fields remain discarded.
+- Post-fix checks passed: focused Gemini adapter 19 tests, full suite 84 tests,
+  production build, and `git diff --check`.
 
 ## In progress
 
-- None.
+- Owner recheck of production `observeGemini()` after the stderr compatibility
+  fix.
 
 ## Next up
 
-1. Let the owner perform the first real extension link/status/uninstall smoke.
+1. Recheck the already-linked extension through production `observeGemini()`.
+2. Let the owner uninstall the extension after the successful recheck.
 
 ## Blockers
 
@@ -89,3 +98,7 @@ extension or user setting has been changed.
   refreshes from appending duplicate session facts.
 - Independent re-review passed after commits `ee69add` and `6e66bdd`; no P0-P3
   finding remains.
+- The first owner smoke linked the real extension, then exposed that Gemini CLI
+  0.43.0 writes pure JSON extension-list output to stderr despite exit code 0.
+  The extension remains linked for the coordinator's post-fix verification;
+  no user settings were read or changed by the fix.
