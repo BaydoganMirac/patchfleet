@@ -23,8 +23,7 @@ Codex is the only Phase 2 execution provider. Its adapter:
 
 1. starts one app-server child through an argv vector, never a shell string;
 2. initializes the versioned JSONL protocol;
-3. creates a persistent thread for an already validated absolute working
-   directory;
+3. creates a persistent thread only for an existing local Git worktree root;
 4. sets `sandbox: workspace-write` and `approvalPolicy: never`;
 5. starts one text turn from the local owner instruction;
 6. returns only validated opaque thread and turn identifiers;
@@ -40,6 +39,11 @@ The UI exposes start and cancel only for Codex and only when the corresponding
 capability and local state allow the action. Claude Code and Gemini CLI remain
 observation-only in Phase 2; the shared model does not pretend they support the
 same controls.
+
+The local preflight rejects a filesystem root, the user's home directory, a
+missing path, a non-directory, and a directory without a `.git` file or
+directory. This keeps `workspace-write` bounded to an explicit code worktree;
+support for non-Git workspaces requires a later policy decision.
 
 ## Consequences
 
@@ -58,4 +62,3 @@ same controls.
 - [ADR 0002](0002-provider-adapters.md)
 - [ADR 0009](0009-codex-observation-uses-supported-app-server-metadata.md)
 - [Task card 0010](../plans/0010-codex-local-work-control.md)
-

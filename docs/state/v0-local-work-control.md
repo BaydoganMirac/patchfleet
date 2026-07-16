@@ -31,16 +31,18 @@ Last updated: 2026-07-16
 - Expiry is evaluated only after a command reaches the serialized writer;
   queued commands cannot apply with a stale pre-queue clock sample, while
   terminal duplicates still return the original receipt unchanged.
+- Task 0009 independently re-reviewed clean with no unresolved P0-P3 finding.
+- Task 0009 exact-tree checks passed: 93 tests, production build, and diff
+  check; commits `3f7f357`, `ad66a4c`, and `649f001` remain local only.
 
 ## In progress
 
-- Independent Task 0009 review.
+- Task 0010 Codex control and local console implementation.
 
 ## Next up
 
-1. Independent Task 0009 review.
-2. Task 0010 Codex control and console implementation.
-3. Combined fresh review, real disposable smoke, full QA, and Phase 2 closure.
+1. Task 0010 Codex control and console implementation.
+2. Combined fresh review, real disposable smoke, full QA, and Phase 2 closure.
 
 ## Blockers
 

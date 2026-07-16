@@ -1,6 +1,6 @@
 # Task card 0009: Durable local work queue
 
-Status: Approved
+Status: Completed
 
 Coordinator: Patchfleet coordinator
 
@@ -11,6 +11,10 @@ Reviewer: one independent reviewer after the Builder commit
 Approved by owner: 2026-07-16
 
 Updated: 2026-07-16
+
+Completed: 2026-07-16
+
+Independent review: Passed after expiry and recovery follow-ups
 
 Depends on: Phase 1 completed and independently reviewed
 
@@ -74,4 +78,3 @@ lock files are read-only.
 
 Stop if the queue needs a second event log/writer, database, service, watcher,
 new dependency, Cloud call, provider process, or raw provider payload.
-

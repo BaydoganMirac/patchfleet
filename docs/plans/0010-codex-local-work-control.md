@@ -50,6 +50,9 @@ extension, and Claude/Gemini control code are read-only.
   per Patchfleet server process.
 - Start a persistent thread in the validated workspace with
   `sandbox: workspace-write`, `approvalPolicy: never`, and raw events disabled.
+- Before start, require an existing Git worktree root and reject filesystem
+  root, the user's home directory, missing/non-directory paths, and paths
+  without a `.git` file or directory.
 - Start one text turn and persist only validated opaque thread/turn IDs.
 - Resume a stored thread before interrupt after runtime restart.
 - Reject app-server requests and discard notifications without serializing
@@ -88,4 +91,3 @@ extension, and Claude/Gemini control code are read-only.
 - Claude Code or Gemini start/cancel;
 - retry, reorder, revise, scheduling, attachments, daemon, watcher, desktop
   wrapper, installer, or new dependency.
-
