@@ -24,6 +24,16 @@ Last updated: 2026-07-17
   smoke, cross-repository paired HTTP smoke, diff checks, secret/path scans,
   and zero-vulnerability npm audits.
 - Completed security review with no unresolved P0-P2 finding.
+- Confirmed the first owner-operated live Cloud pairing: the local host resumed
+  outbound sync after a production restart without exposing local-only data.
+- Completed the product-ready Local activation surface and verified a real
+  paired-host queue, start, local cancel, durable receipt, and sanitized sync
+  loop. The live Cloud-authored cancel remains the next separate proof.
+- Added the local workspace registry and packaged add/list/remove commands so
+  a Git worktree is registered once and then selected by name. The UI resolves
+  opaque local IDs and keeps paths out of Cloud.
+- Passed 134/134 public tests, production build, clean package lifecycle smoke,
+  and a real selected-project queue/start/cancel flow on the paired host.
 
 ## In progress
 
@@ -31,10 +41,9 @@ Last updated: 2026-07-17
 
 ## Next up
 
-1. Owner reviews the two local commits and creates the isolated hosted
-   Supabase/Vercel resources when ready.
-2. Apply the checked-in migration explicitly, deploy, and invite the first
-   one-to-three closed-alpha users as a separate release action.
+1. Exercise the live remote cancel and receipt path with a real active run.
+2. Invite the first one-to-three closed-alpha users as a separate release
+   action.
 3. Use alpha evidence before considering signed native installers or another
    remote command.
 
@@ -46,3 +55,5 @@ Last updated: 2026-07-17
 ## Open questions
 
 - Signed native installers and OS login startup wait for closed-alpha evidence.
+- Declarative agent packs follow a stable external activation path; executable
+  plugins and multi-agent orchestration are not part of the current alpha.
